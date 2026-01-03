@@ -1,7 +1,6 @@
 import React from 'react';
 import { Swiper } from 'antd-mobile';
 import Cover from './slides/Cover';
-import Run365 from './slides/Run365';
 import Album from './slides/Album';
 import Numbers from './slides/Numbers';
 import Hosts from './slides/Hosts';
