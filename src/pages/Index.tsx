@@ -4,6 +4,9 @@ import Cover from './slides/Cover';
 import Run365 from './slides/Run365';
 import Album from './slides/Album';
 import Numbers from './slides/Numbers';
+import Hosts from './slides/Hosts';
+import Brands from './slides/Brands';
+import Contact from './slides/Contact';
 
 const Index: React.FC = () => {
   return (
@@ -19,7 +22,13 @@ const Index: React.FC = () => {
            <Numbers />
         </Swiper.Item>
         <Swiper.Item>
-           <Run365 />
+           <Hosts />
+        </Swiper.Item>
+        <Swiper.Item>
+           <Brands />
+        </Swiper.Item>
+        <Swiper.Item>
+           <Contact />
         </Swiper.Item>
       </Swiper>
     </div>
