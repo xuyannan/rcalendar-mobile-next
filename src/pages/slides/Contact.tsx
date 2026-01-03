@@ -1,22 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 const Contact: React.FC = () => {
-  const [toast, setToast] = useState<string | null>(null);
-
   const contacts = [
     { label: '商务合作微信号', value: 'janicegooner' },
     { label: '客服及加入听众群微信号', value: 'paozherili' },
   ];
-
-  const handleCopy = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setToast('复制成功');
-    } catch {
-      setToast('复制失败');
-    }
-    setTimeout(() => setToast(null), 1500);
-  };
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 24px', background: '#fff', position: 'relative' }}>
@@ -29,21 +17,6 @@ const Contact: React.FC = () => {
           </div>
         </div>
       ))}
-      {toast && (
-        <div style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'rgba(0,0,0,0.7)',
-          color: '#fff',
-          padding: '10px 20px',
-          borderRadius: 8,
-          fontSize: 14,
-        }}>
-          {toast}
-        </div>
-      )}
       <div style={{ position: 'absolute', bottom: 20, left: 0, right: 0, textAlign: 'center', fontSize: 12, color: '#999' }}>
         备案号:京ICP备20004918号
       </div>
