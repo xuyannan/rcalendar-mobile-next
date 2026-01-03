@@ -5,6 +5,7 @@ import Index from '../pages/Index';
 import StravaBind from '../pages/StravaBind';
 import StravaCallback from '../pages/StravaCallback';
 import WxAuthCallback from '../pages/WxAuthCallback';
+import PrivacyPolicy from '../pages/PrivacyPolicy';
 
 const router = createBrowserRouter([
   {
@@ -18,6 +19,7 @@ const router = createBrowserRouter([
       { path: 'bind_strava', element: <StravaBind /> },
       { path: 'strava_callback', element: <StravaCallback /> },
       { path: 'wx_auth_callback', element: <WxAuthCallback /> },
+      { path: 'privacy', element: <PrivacyPolicy /> },
     ]
   }
 ]);
