@@ -18,7 +18,7 @@ const Contact: React.FC = () => {
         </div>
       ))}
       <div style={{ position: 'absolute', bottom: 20, left: 0, right: 0, textAlign: 'center', fontSize: 12, color: '#999' }}>
-        备案号:京ICP备20004918号
+        备案号:京ICP备20004918号 | <a href="/privacy" style={{ color: '#999' }}>隐私政策</a>
       </div>
     </div>
   );

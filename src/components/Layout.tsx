@@ -14,10 +14,10 @@ const Layout: React.FC = () => {
         case '/s1': return 'Stage 1';
         case '/s2': return 'Stage 2';
         case '/s3': return 'Stage 3';
-        case '/bind_strava': return 'Bind Strava';
-        case '/strava_callback': return 'Strava Callback';
-        case '/wx_auth_callback': return 'Wx Auth';
-        default: return 'RCalendar';
+        case '/bind_strava': return '绑定Strava';
+        case '/strava_callback': return '绑定 Strava 回调';
+        case '/wx_auth_callback': return '微信登录';
+        default: return '跑者日历';
     }
   }
 
