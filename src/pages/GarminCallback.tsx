@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Toast, SpinLoading } from 'antd-mobile';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import request from '../utils/request';
 import { GARMIN_REDIRECT_URI } from '../constants';
 
 const GarminCallback: React.FC = () => {
     const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [message, setMessage] = useState('正在绑定 Garmin 账号...');
 
@@ -38,7 +37,7 @@ const GarminCallback: React.FC = () => {
             try {
                 // Exchange code for token via backend
                 // redirect_uri must match the one used in authorization request
-                const response = await request.post('/auth/garmin-bind/', {
+                const response = await request.post('/api/v2/auth/garmin-bind/', {
                     code,
                     code_verifier: codeVerifier,
                     redirect_uri: GARMIN_REDIRECT_URI,
@@ -46,15 +45,14 @@ const GarminCallback: React.FC = () => {
 
                 // Clear code verifier
                 sessionStorage.removeItem('garmin_code_verifier');
-
-                if (response.status === 'success') {
+                console.log('Garmin bind response:', response);
+                if (response.status === 200) {
                     setStatus('success');
                     setMessage('Garmin 账号绑定成功！');
                     Toast.show({ content: '绑定成功', icon: 'success' });
-                    setTimeout(() => navigate('/me'), 2000);
                 } else {
                     setStatus('error');
-                    setMessage(response.error || '绑定失败');
+                    setMessage(response.data.message || '绑定失败');
                 }
             } catch (err: any) {
                 console.error('Garmin bind error:', err);
@@ -64,7 +62,7 @@ const GarminCallback: React.FC = () => {
         };
 
         handleCallback();
-    }, [searchParams, navigate]);
+    }, [searchParams]);
 
     return (
         <div style={{ 
