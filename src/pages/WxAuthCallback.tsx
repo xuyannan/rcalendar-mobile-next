@@ -17,7 +17,7 @@ const WxAuthCallback: React.FC = () => {
             setLoading(true);
             try {
                 const res: any = await request({
-                    url: `https://run365.info/api/v2/auth/wechat-login/`,
+                    url: `/api/v2/auth/wechat-login/`,
                     method: 'POST',
                     data: { code }
                 });
