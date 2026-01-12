@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Toast, SpinLoading } from 'antd-mobile';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import request from '../api/request';
+import request from '../utils/request';
 import { GARMIN_REDIRECT_URI } from '../constants';
 
 const GarminCallback: React.FC = () => {

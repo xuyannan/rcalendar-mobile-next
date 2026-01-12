@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { SpinLoading } from 'antd-mobile';
 import { useSearchParams } from 'react-router-dom';
 import request from '../utils/request';
-import { STORAGE_USER_TOKEN } from '../constants';
+import { STORAGE_USER_REFRESH_TOKEN, STORAGE_USER_TOKEN } from '../constants';
 
 const WxAuthCallback: React.FC = () => {
     const [searchParams] = useSearchParams();
@@ -17,13 +17,15 @@ const WxAuthCallback: React.FC = () => {
             setLoading(true);
             try {
                 const res: any = await request({
-                    url: `/api/v1/m/userLogin`,
+                    url: `/api/v2/auth/wechat-login/`,
                     method: 'POST',
                     data: { code }
                 });
-                if (res.code === 0) {
-                    const { token } = res.data;
+                const { data, status } = res;
+                if (status === 200) {
+                    const { token, refresh } = data;
                     localStorage.setItem(STORAGE_USER_TOKEN, token);
+                    localStorage.setItem(STORAGE_USER_REFRESH_TOKEN, refresh);
                     if (redirectTo) {
                         window.location.href = redirectTo;
                     } else {
