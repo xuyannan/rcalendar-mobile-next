@@ -6,6 +6,8 @@ import StravaBind from '../pages/StravaBind';
 import StravaCallback from '../pages/StravaCallback';
 import GarminBind from '../pages/GarminBind';
 import GarminCallback from '../pages/GarminCallback';
+import CorosBind from '../pages/CorosBind';
+import CorosCallback from '../pages/CorosCallback';
 import WxAuthCallback from '../pages/WxAuthCallback';
 import PrivacyPolicy from '../pages/PrivacyPolicy';
 
@@ -22,6 +24,8 @@ const router = createBrowserRouter([
       { path: 'strava_callback', element: <StravaCallback /> },
       { path: 'bind_garmin', element: <GarminBind /> },
       { path: 'garmin_callback', element: <GarminCallback /> },
+      { path: 'bind_coros', element: <CorosBind /> },
+      { path: 'coros_callback', element: <CorosCallback /> },
       { path: 'wx_auth_callback', element: <WxAuthCallback /> },
       { path: 'privacy', element: <PrivacyPolicy /> },
     ]

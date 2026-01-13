@@ -9,3 +9,8 @@ export const STRAVA_APPID = 36543;
 export const GARMIN_CLIENT_ID = '509fd6f7-1992-49b6-a712-b2551e0ea2c3'; // 需要填入实际的 Garmin Client ID
 export const GARMIN_REDIRECT_URI = 'https://m.run365.info/garmin_callback';
 export const GARMIN_AUTH_URL = 'https://connect.garmin.cn/oauth2Confirm';
+
+// Coros OAuth2 configuration
+export const COROS_CLIENT_ID = 'ee69bfd79b1e489cbe12ac7cb197e8ae'; // 需要填入实际的 Coros Client ID
+export const COROS_REDIRECT_URI = 'https://m.run365.info/coros_callback';
+export const COROS_AUTH_URL = 'https://open.coros.com/oauth2/authorize';
