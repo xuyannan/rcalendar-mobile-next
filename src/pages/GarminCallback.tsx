@@ -7,7 +7,7 @@ import { GARMIN_REDIRECT_URI } from '../constants';
 const GarminCallback: React.FC = () => {
     const [searchParams] = useSearchParams();
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-    const [message, setMessage] = useState('正在绑定 Garmin 账号...');
+    const [message, setMessage] = useState('正在绑定 Garmin（中国） 账号...');
 
     useEffect(() => {
         const handleCallback = async () => {
@@ -48,7 +48,7 @@ const GarminCallback: React.FC = () => {
                 console.log('Garmin bind response:', response);
                 if (response.status === 200) {
                     setStatus('success');
-                    setMessage('Garmin 账号绑定成功！');
+                    setMessage('Garmin（中国） 账号绑定成功！您的运动记录会自动同步到跑者日历平台');
                     Toast.show({ content: '绑定成功', icon: 'success' });
                 } else {
                     setStatus('error');
@@ -75,10 +75,10 @@ const GarminCallback: React.FC = () => {
         }}>
             {status === 'loading' && <SpinLoading style={{ '--size': '48px' }} />}
             {status === 'success' && (
-                <div style={{ color: '#52c41a', fontSize: 48 }}>✓</div>
+                <div style={{ color: '#52c41a', fontSize: 48 }}>🎉</div>
             )}
             {status === 'error' && (
-                <div style={{ color: '#ff4d4f', fontSize: 48 }}>✗</div>
+                <div style={{ color: '#ff4d4f', fontSize: 48 }}>⚠️</div>
             )}
             <p style={{ marginTop: 20, textAlign: 'center' }}>{message}</p>
         </div>
