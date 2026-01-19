@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Container, Paper, Title, Text, Group, Button, Loader, Center } from '@mantine/core';
-import { IconArrowLeft, IconRefresh } from '@tabler/icons-react';
+import { IconArrowLeft, IconRefresh, IconRun } from '@tabler/icons-react';
 import request from '../../utils/request';
 import EventHeader from './components/EventHeader';
 import MapElevation from './components/MapElevation';
@@ -75,7 +75,10 @@ const EventDashboard: React.FC = () => {
       {data.groups && <MapElevation groups={data.groups} />}
 
       <Group justify="space-between" align="center" mb="md">
-        <Title order={4}>选手追踪</Title>
+        <Group gap="xs">
+          <IconRun size={20} />
+          <Title order={4}>选手追踪</Title>
+        </Group>
       </Group>
 
       {data.groups && data.groups.length > 0 ? (

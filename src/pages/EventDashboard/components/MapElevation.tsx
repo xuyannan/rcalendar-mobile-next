@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Paper, Title, Accordion, Tabs, Text, Loader, Center, Box, Stack } from '@mantine/core';
+import { Paper, Title, Accordion, Tabs, Text, Loader, Center, Box, Stack, Group } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
+import { IconMap } from '@tabler/icons-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import * as toGeoJSON from '@tmcw/togeojson';
@@ -452,7 +453,10 @@ const MapElevation: React.FC<MapElevationProps> = ({ groups }) => {
     <Accordion mb="md" defaultValue="map">
       <Accordion.Item value="map">
         <Accordion.Control>
-          <Title order={5}>地图/海拔图</Title>
+          <Group gap="xs">
+            <IconMap size={18} />
+            <Title order={5}>地图/海拔图</Title>
+          </Group>
         </Accordion.Control>
         <Accordion.Panel>
           {tabItems.length === 1 ? (

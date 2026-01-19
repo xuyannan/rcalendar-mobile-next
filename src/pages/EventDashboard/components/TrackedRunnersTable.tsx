@@ -274,6 +274,11 @@ const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group }) => {
     return [...baseColumns, ...cpColumns, ...endColumns];
   }, [sortedCheckpoints]);
 
+  // If no tracked runners, don't render the table at all
+  if (!group.trackedRunners || group.trackedRunners.length === 0) {
+    return null;
+  }
+
   const renderCell = (runner: TrackedRunner, column: any) => {
     const isRefreshing = refreshingRunners.has(runner.id!);
     const nextRefreshIn = runner.nextRefreshIn;
@@ -370,13 +375,30 @@ const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group }) => {
         </Button> */}
       </Group>
 
-      {group.trackedRunners && group.trackedRunners.length > 0 ? (
-        <ScrollArea>
-          <Table striped highlightOnHover withTableBorder withColumnBorders style={{ minWidth: 800 }}>
-            <Table.Thead>
-              <Table.Tr>
+      <ScrollArea>
+        <Table striped highlightOnHover withTableBorder withColumnBorders style={{ minWidth: 800 }}>
+          <Table.Thead>
+            <Table.Tr>
+              {columns.map((col, idx) => (
+                <Table.Th 
+                  key={col.key}
+                  style={idx === 0 ? { 
+                    position: 'sticky', 
+                    left: 0, 
+                    background: 'var(--mantine-color-body)',
+                    zIndex: 1 
+                  } : undefined}
+                >
+                  {col.label}
+                </Table.Th>
+              ))}
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {group.trackedRunners.map(runner => (
+              <Table.Tr key={runner.id}>
                 {columns.map((col, idx) => (
-                  <Table.Th 
+                  <Table.Td 
                     key={col.key}
                     style={idx === 0 ? { 
                       position: 'sticky', 
@@ -385,35 +407,14 @@ const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group }) => {
                       zIndex: 1 
                     } : undefined}
                   >
-                    {col.label}
-                  </Table.Th>
+                    {renderCell(runner, col)}
+                  </Table.Td>
                 ))}
               </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {group.trackedRunners.map(runner => (
-                <Table.Tr key={runner.id}>
-                  {columns.map((col, idx) => (
-                    <Table.Td 
-                      key={col.key}
-                      style={idx === 0 ? { 
-                        position: 'sticky', 
-                        left: 0, 
-                        background: 'var(--mantine-color-body)',
-                        zIndex: 1 
-                      } : undefined}
-                    >
-                      {renderCell(runner, col)}
-                    </Table.Td>
-                  ))}
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </ScrollArea>
-      ) : (
-        <Text c="dimmed" ta="center" py="xl">暂无关注选手</Text>
-      )}
+            ))}
+          </Table.Tbody>
+        </Table>
+      </ScrollArea>
 
       <Modal opened={modalOpened} onClose={closeModal} title={editingRunner ? '编辑选手' : '添加选手'}>
         <Stack>
