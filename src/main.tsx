@@ -1,14 +1,30 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { MantineProvider } from '@mantine/core'
+import { Notifications } from '@mantine/notifications'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
-// import 'antd-mobile/es/global' // Optional depending on version, let's include it just in case if needed or rely on auto. 
-// Actually v5 doesn't strictly require global css import if not using some resets. 
-// But let's verify if index.css exists.
 
+import '@mantine/core/styles.css'
+import '@mantine/notifications/styles.css'
 import './index.css'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+})
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <MantineProvider>
+        <Notifications position="top-center" />
+        <App />
+      </MantineProvider>
+    </QueryClientProvider>
   </React.StrictMode>,
 )

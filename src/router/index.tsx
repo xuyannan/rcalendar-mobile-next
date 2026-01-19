@@ -10,11 +10,16 @@ import CorosBind from '../pages/CorosBind';
 import CorosCallback from '../pages/CorosCallback';
 import WxAuthCallback from '../pages/WxAuthCallback';
 import PrivacyPolicy from '../pages/PrivacyPolicy';
+import EventDashboard from '../pages/EventDashboard';
 
 const router = createBrowserRouter([
   {
     path: '/',
     element: <Index />,
+  },
+  {
+    path: '/event/:id/dashboard',
+    element: <EventDashboard />,
   },
   {
     element: <Layout />,
