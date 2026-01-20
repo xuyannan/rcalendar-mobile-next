@@ -1,7 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import Layout from '../components/Layout';
 import Home from '../pages/Home';
-import Index from '../pages/Index';
+import IndexNew from '../pages/IndexNew';
 import StravaBind from '../pages/StravaBind';
 import StravaCallback from '../pages/StravaCallback';
 import GarminBind from '../pages/GarminBind';
@@ -15,7 +15,7 @@ import EventDashboard from '../pages/EventDashboard';
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <Index />,
+    element: <IndexNew />,
   },
   {
     path: '/events/:id/dashboard',

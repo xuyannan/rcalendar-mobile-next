@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Container, Paper, Title, Text, Group, Button, Loader, Center } from '@mantine/core';
+import { Container, Paper, Title, Text, Group, Button, Loader, Center, Box } from '@mantine/core';
 import { IconArrowLeft, IconRefresh, IconRun } from '@tabler/icons-react';
 import request from '../../utils/request';
+import { HeaderMegaMenu } from '../../components/HeaderMegaMenu';
 import EventHeader from './components/EventHeader';
 import MapElevation from './components/MapElevation';
 import TrackedRunnersTable from './components/TrackedRunnersTable';
@@ -50,47 +51,51 @@ const EventDashboard: React.FC = () => {
   }
 
   return (
-    <Container size="xl" py="md">
-      <Group justify="space-between" mb="md">
-        <Button 
-          variant="subtle" 
-          leftSection={<IconArrowLeft size={16} />}
-          onClick={() => navigate(-1)}
-        >
-          返回
-        </Button>
-        <Button
-          variant="light"
-          leftSection={<IconRefresh size={16} />}
-          onClick={handleRefreshPage}
-          loading={isRefreshing}
-        >
-          刷新数据
-        </Button>
-      </Group>
+    <Box>
+      <HeaderMegaMenu />
+      <Box pt={50}>
+        <Container size="xl" py="md">
+          <Group justify="space-between" mb="md">
+            <Button 
+              variant="subtle" 
+              leftSection={<IconArrowLeft size={16} />}
+              onClick={() => navigate(-1)}
+            >
+              返回
+            </Button>
+            <Button
+              variant="light"
+              leftSection={<IconRefresh size={16} />}
+              onClick={handleRefreshPage}
+              loading={isRefreshing}
+            >
+              刷新数据
+            </Button>
+          </Group>
 
-      <EventHeader event={data} />
+          <EventHeader event={data} />
 
-      {/* 地图/海拔图 */}
-      {data.groups && <MapElevation groups={data.groups} />}
+          {data.groups && <MapElevation groups={data.groups} />}
 
-      <Group justify="space-between" align="center" mb="md">
-        <Group gap="xs">
-          <IconRun size={20} />
-          <Title order={4}>选手追踪</Title>
-        </Group>
-      </Group>
+          <Group justify="space-between" align="center" mb="md">
+            <Group gap="xs">
+              <IconRun size={20} />
+              <Title order={4}>选手追踪</Title>
+            </Group>
+          </Group>
 
-      {data.groups && data.groups.length > 0 ? (
-        data.groups.map((group) => (
-          <TrackedRunnersTable key={group.id} group={group} />
-        ))
-      ) : (
-        <Paper p="xl" ta="center">
-          <Text c="dimmed">暂无组别信息</Text>
-        </Paper>
-      )}
-    </Container>
+          {data.groups && data.groups.length > 0 ? (
+            data.groups.map((group) => (
+              <TrackedRunnersTable key={group.id} group={group} />
+            ))
+          ) : (
+            <Paper p="xl" ta="center">
+              <Text c="dimmed">暂无组别信息</Text>
+            </Paper>
+          )}
+        </Container>
+      </Box>
+    </Box>
   );
 };
 
