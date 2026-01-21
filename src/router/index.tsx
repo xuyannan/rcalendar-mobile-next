@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import Home from '../pages/Home';
 import IndexNew from '../pages/IndexNew';
@@ -11,6 +11,11 @@ import CorosCallback from '../pages/CorosCallback';
 import WxAuthCallback from '../pages/WxAuthCallback';
 import PrivacyPolicy from '../pages/PrivacyPolicy';
 import EventDashboard from '../pages/EventDashboard';
+import Login from '../pages/Login';
+import Register from '../pages/Register';
+import UserCenter from '../pages/UserCenter';
+import BindDevice from '../pages/UserCenter/BindDevice';
+import AccountManage from '../pages/UserCenter/AccountManage';
 
 const router = createBrowserRouter([
   {
@@ -20,6 +25,23 @@ const router = createBrowserRouter([
   {
     path: '/events/:id/dashboard',
     element: <EventDashboard />,
+  },
+  {
+    path: '/login',
+    element: <Login />,
+  },
+  {
+    path: '/register',
+    element: <Register />,
+  },
+  {
+    path: '/user',
+    element: <UserCenter />,
+    children: [
+      { index: true, element: <Navigate to="/user/bindDevice" replace /> },
+      { path: 'bindDevice', element: <BindDevice /> },
+      { path: 'account', element: <AccountManage /> },
+    ],
   },
   {
     element: <Layout />,

@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Table, Paper, Title, Group, Button, Text, Badge, ActionIcon, Modal, TextInput, Switch, SegmentedControl, Stack, ScrollArea, Box } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconEdit, IconTrash } from '@tabler/icons-react';
+import { IconEdit, IconTrash, IconEye, IconEyeOff } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import request from '../../../utils/request';
@@ -10,6 +10,8 @@ import type { EventGroup, TrackedRunner } from '../types';
 
 interface TrackedRunnersTableProps {
   group: EventGroup;
+  visibleRunnerIds?: Set<number>;
+  onToggleVisibility?: (runnerId: number) => void;
 }
 
 const STATUS_OPTIONS = [
@@ -28,7 +30,7 @@ const STATUS_MAP: Record<string, { text: string; color: string }> = {
   dnf: { text: 'DNF', color: 'red' },
 };
 
-const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group }) => {
+const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group, visibleRunnerIds, onToggleVisibility }) => {
   const queryClient = useQueryClient();
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
   const [editingRunner, setEditingRunner] = useState<TrackedRunner | null>(null);
@@ -287,11 +289,24 @@ const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group }) => {
 
     switch (column.key) {
       case 'nicknameAndBib':
+        const isVisible = visibleRunnerIds ? visibleRunnerIds.has(runner.id!) : true;
         return (
-          <Box style={{ whiteSpace: 'nowrap' }}>
-            <Text size="sm">{runner.nickname || runner.name || '-'}</Text>
-            <Text size="xs" c="dimmed">{runner.bibNumber || '-'}</Text>
-          </Box>
+          <Group gap={4} wrap="nowrap">
+            {onToggleVisibility && (
+              <ActionIcon 
+                size="xs" 
+                variant="subtle" 
+                color={isVisible ? 'green' : 'gray'}
+                onClick={() => onToggleVisibility(runner.id!)}
+              >
+                {isVisible ? <IconEye size={14} /> : <IconEyeOff size={14} />}
+              </ActionIcon>
+            )}
+            <Box style={{ whiteSpace: 'nowrap' }}>
+              <Text size="sm">{runner.nickname || runner.name || '-'}</Text>
+              <Text size="xs" c="dimmed">{runner.bibNumber || '-'}</Text>
+            </Box>
+          </Group>
         );
       case 'name':
         return runner.name || '-';

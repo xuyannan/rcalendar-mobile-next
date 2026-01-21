@@ -21,6 +21,14 @@ export interface TrackedRunner {
   nextRefreshIn: number;
 }
 
+export interface RunnerLocation {
+  name: string;
+  longitude: number;
+  latitude: number;
+  updatedAt?: string;
+  runnerId?: number;
+}
+
 export interface CheckPoint {
   id: number;
   eventGroup: number;

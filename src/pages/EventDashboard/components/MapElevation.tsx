@@ -17,7 +17,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { transformCoord, transformGeoJSON } from '../utils/coordTransform';
-import type { EventGroup, RoutePoint, CheckPoint } from '../types';
+import type { EventGroup, RoutePoint, CheckPoint, RunnerLocation } from '../types';
 
 // Fix Leaflet default icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -103,9 +103,10 @@ interface ElevationChartProps {
   height?: number;
   routePoints?: RoutePoint[];
   checkpoints?: CheckPoint[];
+  runnerLocations?: RunnerLocation[];
 }
 
-const ElevationChart: React.FC<ElevationChartProps> = ({ data, height = 200, routePoints, checkpoints }) => {
+const ElevationChart: React.FC<ElevationChartProps> = ({ data, height = 200, routePoints, checkpoints, runnerLocations }) => {
   if (data.length === 0) {
     return <Text ta="center" c="dimmed" py="md">暂无海拔数据</Text>;
   }
@@ -137,6 +138,44 @@ const ElevationChart: React.FC<ElevationChartProps> = ({ data, height = 200, rou
 
   const checkpointsWithDistance = checkpoints?.filter(cp => cp.distance != null && cp.distance !== undefined) || [];
   const hasCheckpoints = checkpointsWithDistance.length > 0;
+
+  // Find the closest track point to a given location and return its distance
+  const findDistanceForLocation = (lng: number, lat: number): { distance: number; elevation: number } | null => {
+    if (data.length === 0) return null;
+    let minDist = Infinity;
+    let closestPoint: ElevationPoint | null = null;
+    
+    for (const point of data) {
+      if (point.lng != null && point.lat != null) {
+        const dist = haversineDistance(lat, lng, point.lat, point.lng);
+        if (dist < minDist) {
+          minDist = dist;
+          closestPoint = point;
+        }
+      }
+    }
+    
+    // Only return if within reasonable distance (e.g., 2km from track)
+    if (closestPoint && minDist < 2) {
+      return { distance: closestPoint.distance, elevation: closestPoint.elevation };
+    }
+    return null;
+  };
+
+  // Calculate runner positions on the elevation chart
+  const runnerPositions = runnerLocations
+    ?.map(runner => {
+      const pos = findDistanceForLocation(runner.longitude, runner.latitude);
+      if (pos) {
+        return {
+          name: runner.name,
+          distance: pos.distance,
+          elevation: pos.elevation,
+        };
+      }
+      return null;
+    })
+    .filter((r): r is { name: string; distance: number; elevation: number } => r !== null) || [];
 
   // Custom label component for checkpoints - renders at top of chart
   const renderCheckpointLabel = (cp: CheckPoint) => {
@@ -209,6 +248,25 @@ const ElevationChart: React.FC<ElevationChartProps> = ({ data, height = 200, rou
             />
           );
         })}
+        {/* Render runner positions */}
+        {runnerPositions.map((runner, index) => (
+          <ReferenceDot
+            key={`runner-${index}`}
+            x={runner.distance}
+            y={runner.elevation}
+            r={6}
+            fill="#52c41a"
+            stroke="#fff"
+            strokeWidth={2}
+            label={{
+              value: runner.name,
+              position: 'top',
+              fill: '#52c41a',
+              fontSize: 10,
+              fontWeight: 'bold',
+            }}
+          />
+        ))}
       </AreaChart>
     </ResponsiveContainer>
   );
@@ -218,13 +276,15 @@ const ElevationChart: React.FC<ElevationChartProps> = ({ data, height = 200, rou
 interface GpxMapProps {
   gpxUrl: string;
   routePoints?: RoutePoint[];
+  runnerLocations?: RunnerLocation[];
   height?: number;
   onElevationData?: (data: ElevationPoint[]) => void;
 }
 
-const GpxMap: React.FC<GpxMapProps> = ({ gpxUrl, routePoints, height = 400, onElevationData }) => {
+const GpxMap: React.FC<GpxMapProps> = ({ gpxUrl, routePoints, runnerLocations, height = 400, onElevationData }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const runnerMarkersRef = useRef<L.Marker[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
@@ -362,6 +422,48 @@ const GpxMap: React.FC<GpxMapProps> = ({ gpxUrl, routePoints, height = 400, onEl
     }
   }, [mapReady]);
 
+  // Handle runner locations display
+  useEffect(() => {
+    if (!mapReady || !mapInstanceRef.current) return;
+
+    // Remove existing runner markers
+    runnerMarkersRef.current.forEach(marker => marker.remove());
+    runnerMarkersRef.current = [];
+
+    // Add runner location markers
+    if (runnerLocations && runnerLocations.length > 0) {
+      runnerLocations.forEach(runner => {
+        const [transformedLng, transformedLat] = transformCoord(runner.longitude, runner.latitude);
+        
+        const customIcon = L.divIcon({
+          className: 'runner-location-marker',
+          html: `<div style="
+            background: #52c41a;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            white-space: nowrap;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            border: 1px solid white;
+            text-align: center;
+            box-sizing: border-box;
+            display: inline-block;
+          ">
+            <div>${runner.name}</div>
+          </div>`,
+          iconSize: [0, 0],
+          iconAnchor: [0, 0],
+        });
+        
+        const marker = L.marker([transformedLat, transformedLng], { icon: customIcon })
+          .addTo(mapInstanceRef.current!);
+        runnerMarkersRef.current.push(marker);
+      });
+    }
+  }, [runnerLocations, mapReady]);
+
   return (
     <Box pos="relative" style={{ height, width: '100%' }}>
       {loading && (
@@ -383,9 +485,10 @@ const GpxMap: React.FC<GpxMapProps> = ({ gpxUrl, routePoints, height = 400, onEl
 interface MapElevationContentProps {
   group: EventGroup;
   mapHeight: number;
+  runnerLocations?: RunnerLocation[];
 }
 
-const MapElevationContent: React.FC<MapElevationContentProps> = ({ group, mapHeight }) => {
+const MapElevationContent: React.FC<MapElevationContentProps> = ({ group, mapHeight, runnerLocations }) => {
   const [elevationData, setElevationData] = useState<ElevationPoint[]>([]);
 
   if (!group.routeFile) {
@@ -399,6 +502,7 @@ const MapElevationContent: React.FC<MapElevationContentProps> = ({ group, mapHei
         <GpxMap
           gpxUrl={group.routeFile}
           routePoints={group.routePoints}
+          runnerLocations={runnerLocations}
           height={mapHeight}
           onElevationData={setElevationData}
         />
@@ -411,6 +515,7 @@ const MapElevationContent: React.FC<MapElevationContentProps> = ({ group, mapHei
             height={180}
             routePoints={group.routePoints}
             checkpoints={group.checkpoints}
+            runnerLocations={runnerLocations}
           />
         </Paper>
       )}
@@ -421,9 +526,10 @@ const MapElevationContent: React.FC<MapElevationContentProps> = ({ group, mapHei
 // Main MapElevation Component
 interface MapElevationProps {
   groups: EventGroup[];
+  visibleRunnerIds?: Set<number>;
 }
 
-const MapElevation: React.FC<MapElevationProps> = ({ groups }) => {
+const MapElevation: React.FC<MapElevationProps> = ({ groups, visibleRunnerIds }) => {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const groupsWithRoute = groups.filter(g => g.routeFile);
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -449,6 +555,35 @@ const MapElevation: React.FC<MapElevationProps> = ({ groups }) => {
   // Find current active group
   const activeGroup = groupsWithRoute.find(g => String(g.id) === activeTab) || groupsWithRoute[0];
 
+  // Extract runner locations from tracked runners with location data
+  const getRunnerLocationsForGroup = (group: EventGroup): RunnerLocation[] => {
+    const locations: RunnerLocation[] = [];
+    group.trackedRunners?.forEach(runner => {
+      // Filter by visibility
+      if (visibleRunnerIds && runner.id && !visibleRunnerIds.has(runner.id)) {
+        return;
+      }
+      if (runner.latestResult?.result) {
+        try {
+          const resultData = JSON.parse(runner.latestResult.result);
+          const { _location: location } = resultData;
+          if (location && location.longitude && location.latitude) {
+            locations.push({
+              name: runner.nickname || runner.name || runner.bibNumber || '未知',
+              longitude: location.longitude,
+              latitude: location.latitude,
+              updatedAt: runner.lastRefreshAt,
+              runnerId: runner.id,
+            });
+          }
+        } catch {
+          // ignore parse errors
+        }
+      }
+    });
+    return locations;
+  };
+
   return (
     <Accordion mb="md" defaultValue="map">
       <Accordion.Item value="map">
@@ -460,7 +595,11 @@ const MapElevation: React.FC<MapElevationProps> = ({ groups }) => {
         </Accordion.Control>
         <Accordion.Panel>
           {tabItems.length === 1 ? (
-            <MapElevationContent group={groupsWithRoute[0]} mapHeight={mapHeight} />
+            <MapElevationContent 
+              group={groupsWithRoute[0]} 
+              mapHeight={mapHeight} 
+              runnerLocations={getRunnerLocationsForGroup(groupsWithRoute[0])}
+            />
           ) : (
             <Box>
               <Tabs value={activeTab} onChange={setActiveTab}>
@@ -473,7 +612,14 @@ const MapElevation: React.FC<MapElevationProps> = ({ groups }) => {
                 </Tabs.List>
               </Tabs>
               <Box pt="sm">
-                {activeTab && <MapElevationContent key={activeTab} group={activeGroup} mapHeight={mapHeight} />}
+                {activeTab && (
+                  <MapElevationContent 
+                    key={activeTab} 
+                    group={activeGroup} 
+                    mapHeight={mapHeight}
+                    runnerLocations={getRunnerLocationsForGroup(activeGroup)}
+                  />
+                )}
               </Box>
             </Box>
           )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Container, Paper, Title, Text, Group, Button, Loader, Center, Box } from '@mantine/core';
@@ -15,6 +15,8 @@ const EventDashboard: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [visibleRunnerIds, setVisibleRunnerIds] = useState<Set<number>>(new Set());
+  const [visibilityInitialized, setVisibilityInitialized] = useState(false);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['eventDashboard', id],
@@ -24,6 +26,34 @@ const EventDashboard: React.FC = () => {
     },
     enabled: !!id,
   });
+
+  // Initialize visible runner IDs when data is loaded
+  useMemo(() => {
+    if (data?.groups && !visibilityInitialized) {
+      const allRunnerIds = new Set<number>();
+      data.groups.forEach(group => {
+        group.trackedRunners?.forEach(runner => {
+          if (runner.id) {
+            allRunnerIds.add(runner.id);
+          }
+        });
+      });
+      setVisibleRunnerIds(allRunnerIds);
+      setVisibilityInitialized(true);
+    }
+  }, [data, visibilityInitialized]);
+
+  const toggleRunnerVisibility = (runnerId: number) => {
+    setVisibleRunnerIds(prev => {
+      const next = new Set(prev);
+      if (next.has(runnerId)) {
+        next.delete(runnerId);
+      } else {
+        next.add(runnerId);
+      }
+      return next;
+    });
+  };
 
   const handleRefreshPage = async () => {
     setIsRefreshing(true);
@@ -75,7 +105,7 @@ const EventDashboard: React.FC = () => {
 
           <EventHeader event={data} />
 
-          {data.groups && <MapElevation groups={data.groups} />}
+          {data.groups && <MapElevation groups={data.groups} visibleRunnerIds={visibleRunnerIds} />}
 
           <Group justify="space-between" align="center" mb="md">
             <Group gap="xs">
@@ -86,7 +116,12 @@ const EventDashboard: React.FC = () => {
 
           {data.groups && data.groups.length > 0 ? (
             data.groups.map((group) => (
-              <TrackedRunnersTable key={group.id} group={group} />
+              <TrackedRunnersTable 
+                key={group.id} 
+                group={group} 
+                visibleRunnerIds={visibleRunnerIds}
+                onToggleVisibility={toggleRunnerVisibility}
+              />
             ))
           ) : (
             <Paper p="xl" ta="center">

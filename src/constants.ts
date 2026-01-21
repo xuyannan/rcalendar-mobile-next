@@ -3,6 +3,7 @@ export const STORAGE_USER_REFRESH_TOKEN = 'rc-user-refresh-token';
 export const APP_ID = 'wxaaa01913df6abce5';
 export const APP_SECRET = '9154924de94ef90c5f0121333e7995a3';
 export const WX_LOGIN_CALLBACK = 'https://m.run365.info/wx_auth_callback';
+export const WX_LOGIN_URL = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${APP_ID}&response_type=code&scope=snsapi_userinfo&state=STATE#wechat_redirect`;
 export const STRAVA_APPID = 36543;
 
 // Garmin OAuth2 PKCE configuration
