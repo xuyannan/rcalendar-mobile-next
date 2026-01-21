@@ -56,8 +56,8 @@ export function HeaderMegaMenu() {
     window.location.href = '/';
   };
 
-  const links = [
-    { label: '首页', href: '/' },
+  const links: { label: string; href: string }[] = [
+    // { label: '首页', href: '/' },
   ];
 
   const isLoggedIn = !!user;
@@ -74,11 +74,6 @@ export function HeaderMegaMenu() {
                 {link.label}
               </a>
             ))}
-            {isLoggedIn && (
-              <a href="/user" className={classes.link}>
-                用户中心
-              </a>
-            )}
           </Group>
 
           <Group visibleFrom="sm">
@@ -143,11 +138,6 @@ export function HeaderMegaMenu() {
               {link.label}
             </a>
           ))}
-          {isLoggedIn && (
-            <a href="/user" className={classes.link} onClick={closeDrawer}>
-              用户中心
-            </a>
-          )}
 
           <Divider my="sm" />
 

@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Table, Paper, Title, Group, Button, Text, Badge, ActionIcon, Modal, TextInput, Switch, SegmentedControl, Stack, ScrollArea, Box } from '@mantine/core';
+import { Table, Paper, Title, Group, Button, Text, Badge, ActionIcon, Modal, TextInput, Switch, SegmentedControl, Stack, ScrollArea, Box, UnstyledButton } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconEdit, IconTrash, IconEye, IconEyeOff } from '@tabler/icons-react';
+import { IconEdit, IconTrash, IconEye, IconEyeOff, IconChevronUp, IconChevronDown, IconSelector } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import request from '../../../utils/request';
@@ -30,12 +30,53 @@ const STATUS_MAP: Record<string, { text: string; color: string }> = {
   dnf: { text: 'DNF', color: 'red' },
 };
 
+type SortDirection = 'asc' | 'desc' | null;
+type SortField = 'bib' | 'status' | null;
+
+const STATUS_ORDER: Record<string, number> = {
+  racing: 1,
+  finished: 2,
+  not_started: 3,
+  dns: 4,
+  dnf: 5,
+};
+
 const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group, visibleRunnerIds, onToggleVisibility }) => {
   const queryClient = useQueryClient();
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
   const [editingRunner, setEditingRunner] = useState<TrackedRunner | null>(null);
   const [refreshingRunners, setRefreshingRunners] = useState<Set<number>>(new Set());
   const [countdown, setCountdown] = useState<Record<number, number>>({});
+  
+  // Sorting state
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
+  // Toggle sort function
+  const handleSort = (field: SortField) => {
+    if (sortField !== field) {
+      setSortField(field);
+      setSortDirection('asc');
+    } else if (sortDirection === 'asc') {
+      setSortDirection('desc');
+    } else if (sortDirection === 'desc') {
+      setSortField(null);
+      setSortDirection(null);
+    } else {
+      setSortDirection('asc');
+    }
+  };
+
+  // Get sort icon
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <IconSelector size={14} style={{ opacity: 0.5 }} />;
+    }
+    if (sortDirection === 'asc') {
+      return <IconChevronUp size={14} />;
+    }
+    return <IconChevronDown size={14} />;
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -257,7 +298,7 @@ const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group, visibl
   // Build table columns
   const columns = useMemo(() => {
     const baseColumns = [
-      { key: 'nicknameAndBib', label: '昵称', sticky: true },
+      { key: 'nicknameAndBib', label: '昵称/号码', sticky: true },
     ];
 
     const cpColumns = sortedCheckpoints.map(cp => ({
@@ -267,7 +308,7 @@ const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group, visibl
     }));
 
     const endColumns = [
-      { key: 'status', label: '状态' },
+      { key: 'status', label: '状态', sortable: true },
       // { key: 'isAutoRefresh', label: '自动刷新' },
       { key: 'updatedAt', label: '更新时间'},
       // { key: 'actions', label: '操作' },
@@ -275,6 +316,35 @@ const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group, visibl
 
     return [...baseColumns, ...cpColumns, ...endColumns];
   }, [sortedCheckpoints]);
+
+  // Sorted runners
+  const sortedRunners = useMemo(() => {
+    if (!group.trackedRunners) return [];
+    if (!sortField || !sortDirection) return group.trackedRunners;
+
+    return [...group.trackedRunners].sort((a, b) => {
+      let comparison = 0;
+      
+      if (sortField === 'bib') {
+        const bibA = a.bibNumber || '';
+        const bibB = b.bibNumber || '';
+        // Try numeric comparison first
+        const numA = parseInt(bibA, 10);
+        const numB = parseInt(bibB, 10);
+        if (!isNaN(numA) && !isNaN(numB)) {
+          comparison = numA - numB;
+        } else {
+          comparison = bibA.localeCompare(bibB, 'zh-CN', { numeric: true });
+        }
+      } else if (sortField === 'status') {
+        const orderA = STATUS_ORDER[a.status || 'not_started'] || 99;
+        const orderB = STATUS_ORDER[b.status || 'not_started'] || 99;
+        comparison = orderA - orderB;
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [group.trackedRunners, sortField, sortDirection]);
 
   // If no tracked runners, don't render the table at all
   if (!group.trackedRunners || group.trackedRunners.length === 0) {
@@ -394,23 +464,38 @@ const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group, visibl
         <Table striped highlightOnHover withTableBorder withColumnBorders style={{ minWidth: 800 }}>
           <Table.Thead>
             <Table.Tr>
-              {columns.map((col, idx) => (
-                <Table.Th 
-                  key={col.key}
-                  style={idx === 0 ? { 
-                    position: 'sticky', 
-                    left: 0, 
-                    background: 'var(--mantine-color-body)',
-                    zIndex: 1 
-                  } : undefined}
-                >
-                  {col.label}
-                </Table.Th>
-              ))}
+              {columns.map((col, idx) => {
+                const isSortable = col.key === 'nicknameAndBib' || col.key === 'status';
+                const sortKey = col.key === 'nicknameAndBib' ? 'bib' : col.key === 'status' ? 'status' : null;
+                
+                return (
+                  <Table.Th 
+                    key={col.key}
+                    style={idx === 0 ? { 
+                      position: 'sticky', 
+                      left: 0, 
+                      background: 'var(--mantine-color-body)',
+                      zIndex: 1 
+                    } : undefined}
+                  >
+                    {isSortable ? (
+                      <UnstyledButton 
+                        onClick={() => handleSort(sortKey as SortField)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <span>{col.label}</span>
+                        {getSortIcon(sortKey as SortField)}
+                      </UnstyledButton>
+                    ) : (
+                      col.label
+                    )}
+                  </Table.Th>
+                );
+              })}
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {group.trackedRunners.map(runner => (
+            {sortedRunners.map(runner => (
               <Table.Tr key={runner.id}>
                 {columns.map((col, idx) => (
                   <Table.Td 
