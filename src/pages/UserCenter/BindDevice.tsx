@@ -187,7 +187,7 @@ export default function BindDevice() {
                       绑定于 {new Date(account.createdAt).toLocaleDateString()}
                     </Text>
                   </Group>
-                  {account.synced_at && (
+                  {account.syncedAt && (
                     <Text size="xs" c="dimmed">
                       最后同步: {new Date(account.syncedAt).toLocaleString()}
                     </Text>

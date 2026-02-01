@@ -17,9 +17,9 @@ export interface ThirdPartyAccount {
   id: number;
   name: string;
   provider: 'Strava' | 'Garmin' | 'Coros';
-  third_party_user_id: string | null;
+  thirdPartyUserId: string | null;
   avatar: string | null;
-  synced_at: string | null;
-  created_at: string;
-  backfill_completed: boolean;
+  syncedAt: string | null;
+  createdAt: string;
+  backfillCompleted: boolean;
 }
