@@ -21,4 +21,5 @@ export interface ThirdPartyAccount {
   avatar: string | null;
   synced_at: string | null;
   created_at: string;
+  backfill_completed: boolean;
 }

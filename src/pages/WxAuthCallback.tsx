@@ -12,12 +12,19 @@ const WxAuthCallback: React.FC = () => {
     useEffect(() => {
         const code = searchParams.get('code');
         const redirectTo = searchParams.get('redirect_to');
+        const loginType = searchParams.get('login_type');
 
         const login = async () => {
             setLoading(true);
+            debugger
             try {
+                // 根据login_type选择不同的登录接口
+                const url = loginType === 'qrcode' 
+                    ? '/api/v2/auth/wx-qrcode-login/'
+                    : '/api/v2/auth/wechat-browser-auth/';
+                
                 const res: any = await request({
-                    url: `/api/v2/auth/wechat-login/`,
+                    url,
                     method: 'POST',
                     data: { code }
                 });
@@ -55,8 +62,8 @@ const WxAuthCallback: React.FC = () => {
     }
 
     return (
-        <div style={{ padding: 20 }}>
-            <h3>Hello Strava</h3>
+        <div style={{ padding: 20, textAlign: 'center' }}>
+            <h3>正在登录...</h3>
         </div>
     );
 };

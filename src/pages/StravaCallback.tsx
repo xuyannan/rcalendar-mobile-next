@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Result, Button, SpinLoading } from 'antd-mobile';
 import { CloseCircleFill, CheckCircleFill } from 'antd-mobile-icons';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import request from '../utils/request';
 
 const StravaCallback: React.FC = () => {
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<any>(null);
+    const [error, setError] = useState<unknown>(null);
     const [success, setSuccess] = useState(false);
 
     useEffect(() => {
@@ -56,7 +57,8 @@ const StravaCallback: React.FC = () => {
                     title="绑定失败"
                     description="操作失败，请稍后再试"
                 />
-                <Button block onClick={() => { window.location.href='/bind_strava' }}>重试</Button>
+                <Button block onClick={() => navigate('/bind_strava')}>重试</Button>
+                <Button block color='primary' style={{ marginTop: 10 }} onClick={() => navigate('/user/bindDevice')}>返回设备绑定</Button>
             </div>
         )
     }
@@ -68,9 +70,9 @@ const StravaCallback: React.FC = () => {
                     icon={<CheckCircleFill style={{ color: '#1F90E6', fontSize: 48 }} />}
                     status='success'
                     title="绑定成功"
-                    description="您已成功绑定 Strava 账号，请关闭页面，进入跑者日历小程序同步运动记录"
+                    description="您已成功绑定 Strava 账号，您的运动记录会自动同步到跑者日历平台"
                 />
-                <Button block color='warning' onClick={() => window.close()}>关闭</Button>
+                <Button block color='primary' onClick={() => navigate('/user/bindDevice')}>返回设备绑定</Button>
             </div>
         )
     }

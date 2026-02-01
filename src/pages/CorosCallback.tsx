@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Toast, SpinLoading } from 'antd-mobile';
-import { useSearchParams } from 'react-router-dom';
+import { Toast, SpinLoading, Button } from 'antd-mobile';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import request from '../utils/request';
 import { COROS_REDIRECT_URI } from '../constants';
 
 const CorosCallback: React.FC = () => {
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [message, setMessage] = useState('正在绑定高驰 (Coros) 账号...');
 
@@ -71,6 +72,15 @@ const CorosCallback: React.FC = () => {
                 <div style={{ color: '#ff4d4f', fontSize: 48 }}>⚠️</div>
             )}
             <p style={{ marginTop: 20, textAlign: 'center' }}>{message}</p>
+            {(status === 'success' || status === 'error') && (
+                <Button 
+                    color="primary" 
+                    style={{ marginTop: 20 }}
+                    onClick={() => navigate('/user/bindDevice')}
+                >
+                    返回设备绑定
+                </Button>
+            )}
         </div>
     );
 };

@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Card, Text, Badge, Button, Group, SimpleGrid, Title, Avatar, Stack } from '@mantine/core';
-import { IconBrandStrava, IconDeviceWatch, IconCheck, IconLink } from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
+import { Card, Text, Badge, Button, Group, SimpleGrid, Title, Avatar, Stack, Modal } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { IconBrandStrava, IconDeviceWatch, IconCheck, IconLink, IconRun, IconAlertTriangle, IconRefresh } from '@tabler/icons-react';
 import request from '../../utils/request';
 import type { ThirdPartyAccount } from '../../types/user';
 import {
   STRAVA_APPID,
-  GARMIN_CLIENT_ID,
-  GARMIN_AUTH_URL,
-  GARMIN_REDIRECT_URI,
   COROS_CLIENT_ID,
   COROS_AUTH_URL,
   COROS_REDIRECT_URI,
@@ -20,25 +19,6 @@ interface DeviceConfig {
   color: string;
   getAuthUrl: () => string;
 }
-
-const generateCodeVerifier = () => {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return btoa(String.fromCharCode(...array))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-};
-
-const generateCodeChallenge = async (verifier: string) => {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(verifier);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  return btoa(String.fromCharCode(...new Uint8Array(hash)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-};
 
 const devices: DeviceConfig[] = [
   {
@@ -57,13 +37,7 @@ const devices: DeviceConfig[] = [
     icon: IconDeviceWatch,
     color: 'blue',
     getAuthUrl: () => {
-      const codeVerifier = generateCodeVerifier();
-      localStorage.setItem('garmin_code_verifier', codeVerifier);
-      generateCodeChallenge(codeVerifier).then((challenge) => {
-        const redirectUri = encodeURIComponent(GARMIN_REDIRECT_URI);
-        window.location.href = `${GARMIN_AUTH_URL}?client_id=${GARMIN_CLIENT_ID}&response_type=code&redirect_uri=${redirectUri}&code_challenge=${challenge}&code_challenge_method=S256&scope=GCS_READ_WORKOUT`;
-      });
-      return '';
+      return '/bind_garmin';
     },
   },
   {
@@ -81,15 +55,20 @@ const devices: DeviceConfig[] = [
 ];
 
 export default function BindDevice() {
+  const navigate = useNavigate();
   const [accounts, setAccounts] = useState<ThirdPartyAccount[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unbindModalOpened, { open: openUnbindModal, close: closeUnbindModal }] = useDisclosure(false);
+  const [unbindingAccount, setUnbindingAccount] = useState<{ id: number; provider: string } | null>(null);
+  const [unbinding, setUnbinding] = useState(false);
+  const [backfilling, setBackfilling] = useState<string | null>(null);
 
   useEffect(() => {
-    request({ url: '/api/v2/users/me/', method: 'GET' })
+    request({ url: '/api/v2/users/my-third-party-accounts/', method: 'GET' })
       .then((res: unknown) => {
-        const userData = res as { third_party_accounts?: ThirdPartyAccount[] };
-        if (userData.third_party_accounts) {
-          setAccounts(userData.third_party_accounts);
+        const data = res as ThirdPartyAccount[];
+        if (Array.isArray(data)) {
+          setAccounts(data);
         }
       })
       .catch(() => {})
@@ -101,24 +80,67 @@ export default function BindDevice() {
   };
 
   const handleBind = (device: DeviceConfig) => {
-    if (device.provider === 'Garmin') {
-      device.getAuthUrl();
-    } else {
-      window.location.href = device.getAuthUrl();
+    const url = device.getAuthUrl();
+    if (url) {
+      if (url.startsWith('/')) {
+        navigate(url);
+      } else {
+        window.location.assign(url);
+      }
     }
   };
 
-  const handleUnbind = async (accountId: number) => {
-    if (!confirm('确定要解绑该设备吗？')) return;
+  const handleUnbind = async (accountId: number, provider: string) => {
+    setUnbindingAccount({ id: accountId, provider });
+    openUnbindModal();
+  };
+
+  const confirmUnbind = async () => {
+    if (!unbindingAccount) return;
     
+    setUnbinding(true);
     try {
-      await request({
-        url: `/api/v2/third-party-accounts/${accountId}/`,
-        method: 'DELETE',
-      });
-      setAccounts(accounts.filter((acc) => acc.id !== accountId));
+      if (unbindingAccount.provider === 'Garmin') {
+        await request({
+          url: '/api/v2/auth/garmin-bind/',
+          method: 'DELETE',
+        });
+      } else if (unbindingAccount.provider === 'Coros') {
+        await request({
+          url: '/api/v2/auth/coros-bind/',
+          method: 'DELETE',
+        });
+      } else {
+        await request({
+          url: `/api/v2/third-party-accounts/${unbindingAccount.id}/`,
+          method: 'DELETE',
+        });
+      }
+      setAccounts(accounts.filter((acc) => acc.id !== unbindingAccount.id));
+      closeUnbindModal();
     } catch {
       alert('解绑失败');
+    } finally {
+      setUnbinding(false);
+      setUnbindingAccount(null);
+    }
+  };
+
+  const handleBackfill = async (provider: string) => {
+    setBackfilling(provider);
+    try {
+      const url = provider === 'Garmin' 
+        ? '/api/v2/auth/garmin-backfill/' 
+        : '/api/v2/auth/coros-backfill/';
+      await request({ url, method: 'POST' });
+      setAccounts(accounts.map((acc) => 
+        acc.provider === provider ? { ...acc, backfillCompleted: true } : acc
+      ));
+      alert('运动数据将陆续同步至跑者日历，请耐心等待');
+    } catch {
+      alert('同步失败，请稍后重试');
+    } finally {
+      setBackfilling(null);
     }
   };
 
@@ -162,23 +184,45 @@ export default function BindDevice() {
                   <Group gap="xs">
                     <IconCheck size={16} color="green" />
                     <Text size="sm" c="dimmed">
-                      绑定于 {new Date(account.created_at).toLocaleDateString()}
+                      绑定于 {new Date(account.createdAt).toLocaleDateString()}
                     </Text>
                   </Group>
                   {account.synced_at && (
                     <Text size="xs" c="dimmed">
-                      最后同步: {new Date(account.synced_at).toLocaleString()}
+                      最后同步: {new Date(account.syncedAt).toLocaleString()}
                     </Text>
                   )}
-                  <Button
-                    variant="light"
-                    color="red"
-                    size="sm"
-                    mt="sm"
-                    onClick={() => handleUnbind(account.id)}
-                  >
-                    解绑
-                  </Button>
+                  <Group gap="xs" mt="sm">
+                    <Button
+                      variant="light"
+                      color="blue"
+                      size="sm"
+                      leftSection={<IconRun size={16} />}
+                      onClick={() => navigate(`/user/workouts?provider=${device.provider}`)}
+                    >
+                      运动记录
+                    </Button>
+                    {(device.provider === 'Garmin' || device.provider === 'Coros') && !account.backfillCompleted && (
+                      <Button
+                        variant="light"
+                        color="green"
+                        size="sm"
+                        leftSection={<IconRefresh size={16} />}
+                        loading={backfilling === device.provider}
+                        onClick={() => handleBackfill(device.provider)}
+                      >
+                        同步最近30天记录
+                      </Button>
+                    )}
+                    <Button
+                      variant="light"
+                      color="red"
+                      size="sm"
+                      onClick={() => handleUnbind(account.id, device.provider)}
+                    >
+                      解绑
+                    </Button>
+                  </Group>
                 </Stack>
               ) : (
                 <Button
@@ -196,6 +240,35 @@ export default function BindDevice() {
           );
         })}
       </SimpleGrid>
+
+      <Modal
+        opened={unbindModalOpened}
+        onClose={closeUnbindModal}
+        title={
+          <Group gap="xs">
+            <IconAlertTriangle size={20} color="orange" />
+            <Text fw={500}>确认解绑</Text>
+          </Group>
+        }
+        centered
+      >
+        <Stack>
+          <Text>
+            确定要解绑 {unbindingAccount?.provider} 账户吗？
+          </Text>
+          <Text c="red" size="sm">
+            解绑后，之前从该平台同步的运动记录将会一并删除。
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button variant="default" onClick={closeUnbindModal}>
+              取消
+            </Button>
+            <Button color="red" loading={unbinding} onClick={confirmUnbind}>
+              确认解绑
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </div>
   );
 }

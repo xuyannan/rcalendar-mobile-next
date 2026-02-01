@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
   Card,
@@ -15,7 +15,7 @@ import {
   Divider,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconBrandWechat, IconMail, IconLock, IconCheck, IconAlertCircle } from '@tabler/icons-react';
+import { IconBrandWechat, IconMail, IconLock, IconCheck, IconAlertCircle, IconPhone } from '@tabler/icons-react';
 import request from '../../utils/request';
 import type { UserInfo } from '../../types/user';
 import { WX_LOGIN_URL } from '../../constants';
@@ -30,12 +30,17 @@ export default function AccountManage() {
   
   const [bindEmailOpened, { open: openBindEmail, close: closeBindEmail }] = useDisclosure(false);
   const [setPasswordOpened, { open: openSetPassword, close: closeSetPassword }] = useDisclosure(false);
+  const [bindPhoneOpened, { open: openBindPhone, close: closeBindPhone }] = useDisclosure(false);
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [smsCode, setSmsCode] = useState('');
+  const [countdown, setCountdown] = useState(0);
+  const [sendingCode, setSendingCode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -43,6 +48,85 @@ export default function AccountManage() {
   const hasWechat = !!user.openid;
   const hasEmail = !!user.email;
   const hasPassword = user.has_password;
+  const hasPhone = !!user.phone;
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
+
+  const validatePhone = (value: string) => {
+    return /^1[3-9]\d{9}$/.test(value);
+  };
+
+  const handleSendCode = async () => {
+    if (!validatePhone(phone)) {
+      setError('请输入有效的手机号码');
+      return;
+    }
+
+    setSendingCode(true);
+    setError(null);
+
+    try {
+      await request({
+        url: '/api/v2/auth/send-sms/',
+        method: 'POST',
+        data: { phone },
+      });
+      setCountdown(60);
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string } } };
+      setError(err.response?.data?.error || '发送验证码失败');
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
+  const handleBindPhone = async () => {
+    if (!validatePhone(phone)) {
+      setError('请输入有效的手机号码');
+      return;
+    }
+    if (!smsCode || smsCode.length < 4) {
+      setError('请输入验证码');
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const res: any = await request({
+        url: '/api/v2/auth/bind-phone/',
+        method: 'POST',
+        data: { phone, code: smsCode },
+      });
+      
+      if (res.data) {
+        setUser(res.data);
+      } else {
+        setUser({ ...user, phone: parseInt(phone) });
+      }
+      setSuccess('手机号绑定成功');
+      closeBindPhone();
+      setPhone('');
+      setSmsCode('');
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { code?: string; error?: string } } };
+      if (err.response?.data?.code === 'PHONE_CONFLICT') {
+        setError('该手机号已被其他账户使用');
+      } else if (err.response?.data?.code === 'INVALID_CODE') {
+        setError('验证码错误或已过期');
+      } else {
+        setError(err.response?.data?.error || '绑定失败');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleBindEmail = async () => {
     if (!email) {
@@ -220,6 +304,31 @@ export default function AccountManage() {
           </Group>
         </Card>
 
+        {/* 手机号绑定状态 */}
+        <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Group justify="space-between">
+            <Group>
+              <IconPhone size={24} color="#FA5252" />
+              <div>
+                <Text fw={500}>手机号</Text>
+                <Text size="sm" c="dimmed">
+                  {hasPhone ? String(user.phone) : '未绑定手机号，绑定后可使用手机号登录'}
+                </Text>
+              </div>
+            </Group>
+            <Group>
+              <Badge color={hasPhone ? 'green' : 'gray'} variant="light">
+                {hasPhone ? '已绑定' : '未绑定'}
+              </Badge>
+              {!hasPhone && (
+                <Button variant="light" color="red" size="sm" onClick={openBindPhone}>
+                  绑定手机号
+                </Button>
+              )}
+            </Group>
+          </Group>
+        </Card>
+
         {/* 账户安全提示 */}
         {!hasWechat && !hasEmail && (
           <Alert icon={<IconAlertCircle size={16} />} color="yellow">
@@ -289,6 +398,48 @@ export default function AccountManage() {
           />
           <Button loading={loading} onClick={handleSetPassword}>
             确认
+          </Button>
+        </Stack>
+      </Modal>
+
+      {/* 绑定手机号弹窗 */}
+      <Modal opened={bindPhoneOpened} onClose={closeBindPhone} title="绑定手机号">
+        <Stack>
+          {error && (
+            <Alert color="red" onClose={() => setError(null)} withCloseButton>
+              {error}
+            </Alert>
+          )}
+          <TextInput
+            label="手机号"
+            placeholder="请输入手机号"
+            required
+            value={phone}
+            onChange={(e) => setPhone(e.currentTarget.value)}
+            maxLength={11}
+          />
+          <Group align="flex-end" gap="xs">
+            <TextInput
+              label="验证码"
+              placeholder="请输入验证码"
+              required
+              value={smsCode}
+              onChange={(e) => setSmsCode(e.currentTarget.value)}
+              maxLength={6}
+              style={{ flex: 1 }}
+            />
+            <Button
+              variant="outline"
+              onClick={handleSendCode}
+              loading={sendingCode}
+              disabled={countdown > 0 || !validatePhone(phone)}
+              style={{ width: 120 }}
+            >
+              {countdown > 0 ? `${countdown}秒` : '获取验证码'}
+            </Button>
+          </Group>
+          <Button loading={loading} onClick={handleBindPhone}>
+            确认绑定
           </Button>
         </Stack>
       </Modal>
