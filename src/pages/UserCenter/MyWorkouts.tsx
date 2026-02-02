@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Table, Title, Text, Group, Select, Badge, Loader, Center } from '@mantine/core';
+import { MonthPickerInput } from '@mantine/dates';
+import 'dayjs/locale/zh-cn';
 import request from '../../utils/request';
 
 interface Workout {
@@ -64,29 +66,15 @@ function formatPace(secondsPerKm: number): string {
   return `${m}'${s.toString().padStart(2, '0')}"`;
 }
 
-function getMonthOptions(): { value: string; label: string }[] {
-  const options: { value: string; label: string }[] = [];
-  const now = new Date();
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    const label = `${d.getFullYear()}年${d.getMonth() + 1}月`;
-    options.push({ value, label });
-  }
-  return options;
-}
-
 export default function MyWorkouts() {
   const [searchParams] = useSearchParams();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
-  const [month, setMonth] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  });
+  const [monthDate, setMonthDate] = useState<Date>(new Date());
   const [source, setSource] = useState(() => searchParams.get('provider') || '');
 
   useEffect(() => {
+    const month = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
     setLoading(true);
     let url = `/api/v2/myWorkouts/?month=${month}`;
     if (source) {
@@ -102,7 +90,7 @@ export default function MyWorkouts() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [month, source]);
+  }, [monthDate, source]);
 
   const rows = workouts.map((w) => (
     <Table.Tr key={w.id}>
@@ -141,10 +129,16 @@ export default function MyWorkouts() {
             style={{ width: 120 }}
             placeholder="数据来源"
           />
-          <Select
-            value={month}
-            onChange={(v) => v && setMonth(v)}
-            data={getMonthOptions()}
+          <MonthPickerInput
+            value={monthDate}
+            onChange={(v) => {
+              if (v) {
+                const d = typeof v === 'string' ? new Date(v) : v;
+                setMonthDate(d);
+              }
+            }}
+            locale="zh-cn"
+            valueFormat="YYYY年M月"
             style={{ width: 150 }}
           />
         </Group>
