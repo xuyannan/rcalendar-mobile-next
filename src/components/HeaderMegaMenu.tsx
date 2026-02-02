@@ -57,7 +57,8 @@ export function HeaderMegaMenu() {
   };
 
   const links: { label: string; href: string }[] = [
-    // { label: '首页', href: '/' },
+    { label: '首页', href: '/' },
+    { label: '用户中心', href: '/user' },
   ];
 
   const isLoggedIn = !!user;

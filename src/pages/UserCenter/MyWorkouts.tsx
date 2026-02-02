@@ -97,7 +97,7 @@ export default function MyWorkouts() {
 
   const rows = workouts.map((w) => (
     <Table.Tr key={w.id}>
-      <Table.Td>
+      <Table.Td style={{ position: 'sticky', left: 0, backgroundColor: 'var(--mantine-color-body)', zIndex: 1 }}>
         <div>
           <Text size="sm" fw={500}>{w.activityName || '-'}</Text>
           <Text size="xs" c="dimmed">{w.activityType || '-'}</Text>
@@ -160,21 +160,23 @@ export default function MyWorkouts() {
           <Text size="sm" c="dimmed" mb="sm">
             共 {totalCount} 条记录
           </Text>
-          <Table striped highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>名称/类型</Table.Th>
-                <Table.Th>日期</Table.Th>
-                <Table.Th>距离</Table.Th>
-                <Table.Th>时间</Table.Th>
-                <Table.Th>配速</Table.Th>
-                <Table.Th>卡路里</Table.Th>
-                <Table.Th>平均心率</Table.Th>
-                <Table.Th>数据来源</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>{rows}</Table.Tbody>
-          </Table>
+          <Table.ScrollContainer minWidth={700}>
+            <Table striped highlightOnHover stickyHeader>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th style={{ position: 'sticky', left: 0, backgroundColor: 'var(--mantine-color-body)', zIndex: 1 }}>名称/类型</Table.Th>
+                  <Table.Th>日期</Table.Th>
+                  <Table.Th>距离</Table.Th>
+                  <Table.Th>时间</Table.Th>
+                  <Table.Th>配速</Table.Th>
+                  <Table.Th>卡路里</Table.Th>
+                  <Table.Th>平均心率</Table.Th>
+                  <Table.Th>数据来源</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>{rows}</Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
         </>
       )}
     </div>
