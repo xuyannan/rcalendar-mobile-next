@@ -4,7 +4,6 @@ import Home from '../pages/Home';
 import IndexNew from '../pages/IndexNew';
 import StravaBind from '../pages/StravaBind';
 import StravaCallback from '../pages/StravaCallback';
-import GarminBind from '../pages/GarminBind';
 import GarminCallback from '../pages/GarminCallback';
 import CorosBind from '../pages/CorosBind';
 import CorosCallback from '../pages/CorosCallback';
@@ -16,6 +15,7 @@ import Register from '../pages/Register';
 import UserCenter from '../pages/UserCenter';
 import BindDevice from '../pages/UserCenter/BindDevice';
 import AccountManage from '../pages/UserCenter/AccountManage';
+import MyWorkouts from '../pages/UserCenter/MyWorkouts';
 
 const router = createBrowserRouter([
   {
@@ -41,6 +41,7 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/user/bindDevice" replace /> },
       { path: 'bindDevice', element: <BindDevice /> },
       { path: 'account', element: <AccountManage /> },
+      { path: 'workouts', element: <MyWorkouts /> },
     ],
   },
   {
@@ -49,7 +50,6 @@ const router = createBrowserRouter([
       { path: 'home', element: <Home /> },
       { path: 'bind_strava', element: <StravaBind /> },
       { path: 'strava_callback', element: <StravaCallback /> },
-      { path: 'bind_garmin', element: <GarminBind /> },
       { path: 'garmin_callback', element: <GarminCallback /> },
       { path: 'bind_coros', element: <CorosBind /> },
       { path: 'coros_callback', element: <CorosCallback /> },

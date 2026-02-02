@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Box, Text, Group, Avatar } from '@mantine/core';
-import { IconDeviceWatch, IconUserCircle } from '@tabler/icons-react';
+import { IconDeviceWatch, IconUserCircle, IconRun } from '@tabler/icons-react';
 import classes from './UserCenter.module.css';
 import { STORAGE_USER_TOKEN, STORAGE_USER_REFRESH_TOKEN } from '../../constants';
 import request from '../../utils/request';
@@ -10,6 +10,7 @@ import { HeaderMegaMenu } from '../../components/HeaderMegaMenu';
 
 const navItems = [
   { link: '/user/bindDevice', label: '绑定设备', icon: IconDeviceWatch },
+  { link: '/user/workouts', label: '运动记录', icon: IconRun },
   { link: '/user/account', label: '账户管理', icon: IconUserCircle },
 ];
 

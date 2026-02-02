@@ -10,46 +10,70 @@ import {
   COROS_CLIENT_ID,
   COROS_AUTH_URL,
   COROS_REDIRECT_URI,
+  GARMIN_CLIENT_ID,
+  GARMIN_REDIRECT_URI,
+  GARMIN_AUTH_URL,
 } from '../../constants';
+
+const generateRandomString = (length: number): string => {
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  let result = '';
+  const randomValues = new Uint8Array(length);
+  crypto.getRandomValues(randomValues);
+  for (let i = 0; i < length; i++) {
+    result += charset[randomValues[i] % charset.length];
+  }
+  return result;
+};
+
+const generateCodeChallenge = async (codeVerifier: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(codeVerifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(digest)));
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
 
 interface DeviceConfig {
   provider: 'Strava' | 'Garmin' | 'Coros';
   name: string;
   icon: typeof IconBrandStrava;
   color: string;
-  getAuthUrl: () => string;
+  description: string;
+  getAuthUrl: () => string | null;
 }
 
 const devices: DeviceConfig[] = [
-  {
-    provider: 'Strava',
-    name: 'Strava',
-    icon: IconBrandStrava,
-    color: 'orange',
-    getAuthUrl: () => {
-      const redirectUri = encodeURIComponent(`${window.location.origin}/strava_callback`);
-      return `https://www.strava.com/oauth/authorize?client_id=${STRAVA_APPID}&response_type=code&redirect_uri=${redirectUri}&scope=read,activity:read_all`;
-    },
-  },
   {
     provider: 'Garmin',
     name: 'Garmin',
     icon: IconDeviceWatch,
     color: 'blue',
-    getAuthUrl: () => {
-      return '/bind_garmin';
-    },
+    description: '若要同步历史数据,请在绑定时打开"历史数据（Historical Data）"',
+    getAuthUrl: () => null,
   },
   {
     provider: 'Coros',
     name: 'Coros',
     icon: IconDeviceWatch,
     color: 'teal',
+    description: '',
     getAuthUrl: () => {
       const redirectUri = encodeURIComponent(COROS_REDIRECT_URI);
       const state = Math.random().toString(36).substring(7);
       localStorage.setItem('coros_state', state);
       return `${COROS_AUTH_URL}?client_id=${COROS_CLIENT_ID}&response_type=code&redirect_uri=${redirectUri}&state=${state}`;
+    },
+  },
+  {
+    provider: 'Strava',
+    name: 'Strava',
+    icon: IconBrandStrava,
+    color: 'orange',
+    description: '',
+    getAuthUrl: () => {
+      const redirectUri = encodeURIComponent(`${window.location.origin}/strava_callback`);
+      return `https://www.strava.com/oauth/authorize?client_id=${STRAVA_APPID}&response_type=code&redirect_uri=${redirectUri}&scope=read,activity:read_all`;
     },
   },
 ];
@@ -62,6 +86,7 @@ export default function BindDevice() {
   const [unbindingAccount, setUnbindingAccount] = useState<{ id: number; provider: string } | null>(null);
   const [unbinding, setUnbinding] = useState(false);
   const [backfilling, setBackfilling] = useState<string | null>(null);
+  const [garminBinding, setGarminBinding] = useState(false);
 
   useEffect(() => {
     request({ url: '/api/v2/users/my-third-party-accounts/', method: 'GET' })
@@ -79,7 +104,27 @@ export default function BindDevice() {
     return accounts.find((acc) => acc.provider === provider);
   };
 
-  const handleBind = (device: DeviceConfig) => {
+  const handleBind = async (device: DeviceConfig) => {
+    if (device.provider === 'Garmin') {
+      if (!GARMIN_CLIENT_ID) {
+        alert('Garmin Client ID 未配置');
+        return;
+      }
+      setGarminBinding(true);
+      try {
+        const codeVerifier = generateRandomString(64);
+        const codeChallenge = await generateCodeChallenge(codeVerifier);
+        sessionStorage.setItem('garmin_code_verifier', codeVerifier);
+        const state = btoa(JSON.stringify({ redirect: '/bindSuccess' }));
+        const authUrl = `${GARMIN_AUTH_URL}?client_id=${GARMIN_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(GARMIN_REDIRECT_URI)}&code_challenge=${codeChallenge}&code_challenge_method=S256&state=${encodeURIComponent(state)}`;
+        window.location.href = authUrl;
+      } catch {
+        alert('生成授权参数失败');
+        setGarminBinding(false);
+      }
+      return;
+    }
+
     const url = device.getAuthUrl();
     if (url) {
       if (url.startsWith('/')) {
@@ -225,16 +270,24 @@ export default function BindDevice() {
                   </Group>
                 </Stack>
               ) : (
-                <Button
-                  variant="light"
-                  color={device.color}
-                  fullWidth
-                  mt="md"
-                  leftSection={<IconLink size={16} />}
-                  onClick={() => handleBind(device)}
-                >
-                  立即绑定
-                </Button>
+                <>
+                  {device.description && (
+                    <Text size="xs" c="dimmed" mt="xs">
+                      {device.description}
+                    </Text>
+                  )}
+                  <Button
+                    variant="light"
+                    color={device.color}
+                    fullWidth
+                    mt="md"
+                    leftSection={<IconLink size={16} />}
+                    loading={device.provider === 'Garmin' && garminBinding}
+                    onClick={() => handleBind(device)}
+                  >
+                    立即绑定
+                  </Button>
+                </>
               )}
             </Card>
           );
