@@ -72,20 +72,23 @@ export default function MyWorkouts() {
   const [loading, setLoading] = useState(true);
   const [monthDate, setMonthDate] = useState<Date>(new Date());
   const [source, setSource] = useState(() => searchParams.get('provider') || '');
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     const month = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
     setLoading(true);
-    let url = `/api/v2/myWorkouts/?month=${month}`;
+    let url = `/api/v2/myWorkouts/?month=${month}&size=9999`;
     if (source) {
       url += `&source=${source}`;
     }
     request({ url, method: 'GET' })
       .then((res) => {
-        const response = res as unknown as { results?: Workout[] } | Workout[];
+        const response = res as unknown as { results?: Workout[]; count?: number } | Workout[];
         const data = Array.isArray(response) ? response : response.results;
+        const count = Array.isArray(response) ? response.length : (response.count ?? 0);
         if (Array.isArray(data)) {
           setWorkouts(data);
+          setTotalCount(count);
         }
       })
       .catch(() => {})
@@ -153,21 +156,26 @@ export default function MyWorkouts() {
           暂无运动记录
         </Text>
       ) : (
-        <Table striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>名称/类型</Table.Th>
-              <Table.Th>日期</Table.Th>
-              <Table.Th>距离</Table.Th>
-              <Table.Th>时间</Table.Th>
-              <Table.Th>配速</Table.Th>
-              <Table.Th>卡路里</Table.Th>
-              <Table.Th>平均心率</Table.Th>
-              <Table.Th>数据来源</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>{rows}</Table.Tbody>
-        </Table>
+        <>
+          <Text size="sm" c="dimmed" mb="sm">
+            共 {totalCount} 条记录
+          </Text>
+          <Table striped highlightOnHover>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>名称/类型</Table.Th>
+                <Table.Th>日期</Table.Th>
+                <Table.Th>距离</Table.Th>
+                <Table.Th>时间</Table.Th>
+                <Table.Th>配速</Table.Th>
+                <Table.Th>卡路里</Table.Th>
+                <Table.Th>平均心率</Table.Th>
+                <Table.Th>数据来源</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>{rows}</Table.Tbody>
+          </Table>
+        </>
       )}
     </div>
   );
