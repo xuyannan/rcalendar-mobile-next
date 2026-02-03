@@ -9,36 +9,14 @@ const WxAuthCallback: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<any>(null);
     const [message, setMessage] = useState<string>('正在登录...');
-    const [debugInfo, setDebugInfo] = useState<string>('');
 
     useEffect(() => {
-        // 调试：显示完整 URL 和所有参数
-        const fullUrl = window.location.href;
-        const search = window.location.search;
-        
         const code = searchParams.get('code');
         const stateParam = searchParams.get('state');
+        alert(stateParam)
         
-        setDebugInfo(`URL: ${fullUrl}\nSearch: ${search}\ncode: ${code}\nstate: ${stateParam}`);
-        
-        console.log('code:', code);
-        console.log('state:', stateParam);
-        
-        // 从 state 参数解析 action, redirect_to, login_type
-        let action: string | null = null;
-        let redirectTo: string | null = null;
-        let loginType: string | null = null;
-        
-        if (stateParam && stateParam !== 'STATE') {
-            try {
-                const stateObj = JSON.parse(decodeURIComponent(stateParam));
-                action = stateObj.action || null;
-                redirectTo = stateObj.redirect_to || null;
-                loginType = stateObj.login_type || null;
-            } catch {
-                // state 不是 JSON，可能是旧的 STATE 字符串，忽略
-            }
-        }
+        // state=bind 表示绑定微信操作
+        const isBind = stateParam === 'bind';
 
         const bindWechat = async () => {
             setLoading(true);
@@ -47,11 +25,11 @@ const WxAuthCallback: React.FC = () => {
                 const res: any = await request({
                     url: '/api/v2/auth/bind-wechat/',
                     method: 'POST',
-                    data: { code }
+                    data: { code, login_type: 'mobile' }
                 });
                 const { status } = res;
                 if (status === 200) {
-                    window.location.href = redirectTo || '/user/account';
+                    window.location.href = '/user/account';
                 } else {
                     setError(res);
                 }
@@ -67,9 +45,7 @@ const WxAuthCallback: React.FC = () => {
             setLoading(true);
             setMessage('正在登录...');
             try {
-                const url = loginType === 'qrcode' 
-                    ? '/api/v2/auth/wx-qrcode-login/'
-                    : '/api/v2/auth/wechat-browser-auth/';
+                const url = '/api/v2/auth/wechat-browser-auth/';
                 
                 const res: any = await request({
                     url,
@@ -81,11 +57,7 @@ const WxAuthCallback: React.FC = () => {
                     const { token, refresh } = data;
                     localStorage.setItem(STORAGE_USER_TOKEN, token);
                     localStorage.setItem(STORAGE_USER_REFRESH_TOKEN, refresh);
-                    if (redirectTo) {
-                        window.location.href = redirectTo;
-                    } else {
-                        window.location.href = '/';
-                    }
+                    window.location.href = '/';
                 } else {
                     setError(res);
                 }
@@ -97,7 +69,7 @@ const WxAuthCallback: React.FC = () => {
         };
 
         if (code) {
-            if (action === 'bind') {
+            if (isBind) {
                 bindWechat();
             } else {
                 login();
@@ -122,11 +94,6 @@ const WxAuthCallback: React.FC = () => {
     return (
         <div style={{ padding: 20, textAlign: 'center' }}>
             <h3>{message}</h3>
-            {debugInfo && (
-                <pre style={{ textAlign: 'left', fontSize: 12, background: '#f5f5f5', padding: 10, marginTop: 20, wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
-                    {debugInfo}
-                </pre>
-            )}
         </div>
     );
 };
