@@ -9,10 +9,20 @@ const WxAuthCallback: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<any>(null);
     const [message, setMessage] = useState<string>('正在登录...');
+    const [debugInfo, setDebugInfo] = useState<string>('');
 
     useEffect(() => {
+        // 调试：显示完整 URL 和所有参数
+        const fullUrl = window.location.href;
+        const search = window.location.search;
+        
         const code = searchParams.get('code');
         const stateParam = searchParams.get('state');
+        
+        setDebugInfo(`URL: ${fullUrl}\nSearch: ${search}\ncode: ${code}\nstate: ${stateParam}`);
+        
+        console.log('code:', code);
+        console.log('state:', stateParam);
         
         // 从 state 参数解析 action, redirect_to, login_type
         let action: string | null = null;
@@ -112,6 +122,11 @@ const WxAuthCallback: React.FC = () => {
     return (
         <div style={{ padding: 20, textAlign: 'center' }}>
             <h3>{message}</h3>
+            {debugInfo && (
+                <pre style={{ textAlign: 'left', fontSize: 12, background: '#f5f5f5', padding: 10, marginTop: 20, wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
+                    {debugInfo}
+                </pre>
+            )}
         </div>
     );
 };
