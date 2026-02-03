@@ -13,7 +13,6 @@ const WxAuthCallback: React.FC = () => {
     useEffect(() => {
         const code = searchParams.get('code');
         const stateParam = searchParams.get('state');
-        alert(stateParam)
         
         // state=bind 表示绑定微信操作
         const isBind = stateParam === 'bind';
@@ -27,8 +26,13 @@ const WxAuthCallback: React.FC = () => {
                     method: 'POST',
                     data: { code, login_type: 'mobile' }
                 });
-                const { status } = res;
+                const { data, status } = res;
                 if (status === 200) {
+                    // 更新本地存储的 token
+                    localStorage.setItem(STORAGE_USER_TOKEN, data.token);
+                    localStorage.setItem(STORAGE_USER_REFRESH_TOKEN, data.refresh);
+                    
+                    // 跳转回账户管理页面
                     window.location.href = '/user/account';
                 } else {
                     setError(res);
