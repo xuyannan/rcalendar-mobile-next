@@ -3,7 +3,6 @@ import {
   Container,
   Paper,
   TextInput,
-  PasswordInput,
   Button,
   Title,
   Text,
@@ -19,6 +18,7 @@ import {
   Center,
   Loader,
 } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { IconBrandWechat, IconMail, IconPhone, IconQrcode } from '@tabler/icons-react';
 import { useSearchParams } from 'react-router-dom';
 import request from '../utils/request';
@@ -111,6 +111,7 @@ const Login = () => {
   const [activeTab, setActiveTab] = useState<string | null>(
     isWeChat ? 'wechat' : 'phone'
   );
+  const isMobile = useMediaQuery('(max-width: 480px)');
 
   // Phone login state
   const [phone, setPhone] = useState('');
@@ -120,7 +121,9 @@ const Login = () => {
 
   // Email login state
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [emailCode, setEmailCode] = useState('');
+  const [sendingEmailCode, setSendingEmailCode] = useState(false);
+  const [emailCountdown, setEmailCountdown] = useState(0);
 
   // Common state
   const [loading, setLoading] = useState(false);
@@ -138,6 +141,13 @@ const Login = () => {
       return () => clearTimeout(timer);
     }
   }, [countdown]);
+
+  useEffect(() => {
+    if (emailCountdown > 0) {
+      const timer = setTimeout(() => setEmailCountdown(emailCountdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [emailCountdown]);
 
   // Load WeChat QR code when tab changes to qrcode
   useEffect(() => {
@@ -192,9 +202,9 @@ const Login = () => {
         data: { phone },
       });
       setCountdown(60);
-    } catch (e: any) {
-      const errorData = e.response?.data;
-      setError(errorData?.error || '发送验证码失败');
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string } } };
+      setError(err.response?.data?.error || '发送验证码失败');
     } finally {
       setSendingCode(false);
     }
@@ -218,11 +228,11 @@ const Login = () => {
     setError(null);
 
     try {
-      const res: any = await request({
+      const res = await request({
         url: '/api/v2/auth/phone-login/',
         method: 'POST',
         data: { phone, code: smsCode, agreedTerms },
-      });
+      }) as { status: number; data: { token: string; refresh: string } };
 
       if (res.status === 200 && res.data) {
         const { token, refresh } = res.data;
@@ -230,21 +240,49 @@ const Login = () => {
         localStorage.setItem(STORAGE_USER_REFRESH_TOKEN, refresh);
         window.location.href = redirectTo;
       }
-    } catch (e: any) {
-      const errorData = e.response?.data;
-      setError(errorData?.error || '登录失败');
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string } } };
+      setError(err.response?.data?.error || '登录失败');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEmailLogin = async () => {
-    if (!email) {
-      setError('请输入邮箱');
+  const validateEmail = (value: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  };
+
+  const handleSendEmailCode = async () => {
+    if (!validateEmail(email)) {
+      setError('请输入有效的邮箱地址');
       return;
     }
-    if (!password) {
-      setError('请输入密码');
+
+    setSendingEmailCode(true);
+    setError(null);
+
+    try {
+      await request({
+        url: '/api/v2/auth/send-email-code/',
+        method: 'POST',
+        data: { email },
+      });
+      setEmailCountdown(60);
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string } } };
+      setError(err.response?.data?.error || '发送验证码失败');
+    } finally {
+      setSendingEmailCode(false);
+    }
+  };
+
+  const handleEmailLogin = async () => {
+    if (!validateEmail(email)) {
+      setError('请输入有效的邮箱地址');
+      return;
+    }
+    if (!emailCode || emailCode.length < 4) {
+      setError('请输入验证码');
       return;
     }
     if (!agreedTerms) {
@@ -256,11 +294,11 @@ const Login = () => {
     setError(null);
 
     try {
-      const res: any = await request({
-        url: '/api/v2/auth/login/',
+      const res = await request({
+        url: '/api/v2/auth/email-code-login/',
         method: 'POST',
-        data: { email, password },
-      });
+        data: { email, code: emailCode, agreedTerms },
+      }) as { status: number; data: { token: string; refresh: string } };
 
       if (res.status === 200 && res.data) {
         const { token, refresh } = res.data;
@@ -268,17 +306,9 @@ const Login = () => {
         localStorage.setItem(STORAGE_USER_REFRESH_TOKEN, refresh);
         window.location.href = redirectTo;
       }
-    } catch (e: any) {
-      const errorData = e.response?.data;
-      if (errorData?.code === 'USER_NOT_FOUND') {
-        setError('用户不存在，请先注册');
-      } else if (errorData?.code === 'INVALID_PASSWORD') {
-        setError('密码错误');
-      } else if (errorData?.code === 'NO_PASSWORD') {
-        setError('该账户通过微信创建，请使用微信登录或先设置密码');
-      } else {
-        setError(errorData?.error || '登录失败');
-      }
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string } } };
+      setError(err.response?.data?.error || '登录失败');
     } finally {
       setLoading(false);
     }
@@ -317,9 +347,6 @@ const Login = () => {
   return (
     <Container size={480} my={40}>
       <Title ta="center">登录 / 注册</Title>
-      <Text c="dimmed" size="sm" ta="center" mt={5}>
-        选择您的登录方式
-      </Text>
 
       <Paper withBorder shadow="md" p={30} mt={30} radius="md">
         {error && (
@@ -331,19 +358,19 @@ const Login = () => {
         <Tabs value={activeTab} onChange={setActiveTab}>
           <Tabs.List grow>
             {isWeChat && (
-              <Tabs.Tab value="wechat" leftSection={<IconBrandWechat size={16} />}>
-                微信登录
+              <Tabs.Tab value="wechat" leftSection={<IconBrandWechat size={16} color={activeTab === 'wechat' ? '#07C160' : undefined} />}>
+                {!isMobile && '微信登录'}
               </Tabs.Tab>
             )}
-            <Tabs.Tab value="phone" leftSection={<IconPhone size={16} />}>
-              手机号
+            <Tabs.Tab value="phone" leftSection={<IconPhone size={16} color={activeTab === 'phone' ? '#228be6' : undefined} />}>
+              {!isMobile && '手机号'}
             </Tabs.Tab>
-            <Tabs.Tab value="email" leftSection={<IconMail size={16} />}>
-              邮箱
+            <Tabs.Tab value="email" leftSection={<IconMail size={16} color={activeTab === 'email' ? '#fa5252' : undefined} />}>
+              {!isMobile && '邮箱'}
             </Tabs.Tab>
             {!isWeChat && WX_OPEN_APPID && (
-              <Tabs.Tab value="qrcode" leftSection={<IconQrcode size={16} />}>
-                扫码登录
+              <Tabs.Tab value="qrcode" leftSection={<IconQrcode size={16} color={activeTab === 'qrcode' ? '#be4bdb' : undefined} />}>
+                {!isMobile && '扫码登录'}
               </Tabs.Tab>
             )}
           </Tabs.List>
@@ -421,19 +448,32 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.currentTarget.value)}
               />
-              <PasswordInput
-                label="密码"
-                placeholder="输入密码"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.currentTarget.value)}
-              />
+              <Group align="flex-end" gap="xs">
+                <TextInput
+                  label="验证码"
+                  placeholder="请输入验证码"
+                  required
+                  value={emailCode}
+                  onChange={(e) => setEmailCode(e.currentTarget.value)}
+                  maxLength={6}
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  variant="outline"
+                  onClick={handleSendEmailCode}
+                  loading={sendingEmailCode}
+                  disabled={emailCountdown > 0 || !validateEmail(email)}
+                  style={{ width: 120 }}
+                >
+                  {emailCountdown > 0 ? `${emailCountdown}秒` : '获取验证码'}
+                </Button>
+              </Group>
               <TermsCheckbox />
               <Button fullWidth loading={loading} onClick={handleEmailLogin}>
-                登录
+                登录 / 注册
               </Button>
               <Text size="xs" c="dimmed" ta="center">
-                没有账户？请使用手机号注册后绑定邮箱
+                未注册用户将自动创建账户
               </Text>
             </Stack>
           </Tabs.Panel>
@@ -504,6 +544,7 @@ const Login = () => {
 
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     WxLogin: any;
   }
 }

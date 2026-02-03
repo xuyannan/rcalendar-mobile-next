@@ -108,11 +108,8 @@ export function HeaderMegaMenu() {
               </Menu>
             ) : (
               <>
-                <Button variant="default" component="a" href="/login">
-                  登录
-                </Button>
-                <Button component="a" href="/register">
-                  注册
+                <Button component="a" href="/login">
+                  登录 / 注册
                 </Button>
               </>
             )}

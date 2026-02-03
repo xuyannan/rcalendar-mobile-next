@@ -18,7 +18,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { IconBrandWechat, IconMail, IconLock, IconCheck, IconAlertCircle, IconPhone } from '@tabler/icons-react';
 import request from '../../utils/request';
 import type { UserInfo } from '../../types/user';
-import { WX_LOGIN_URL } from '../../constants';
+import { APP_ID } from '../../constants';
 
 interface OutletContext {
   user: UserInfo;
@@ -211,10 +211,12 @@ export default function AccountManage() {
   };
 
   const handleBindWechat = () => {
-    const callbackUrl = encodeURIComponent(
-      `${window.location.origin}/wx_auth_callback?redirect_to=${encodeURIComponent('/user/account')}&action=bind`
-    );
-    window.location.href = `${WX_LOGIN_URL}&redirect_uri=${callbackUrl}`;
+    const state = encodeURIComponent(JSON.stringify({
+      action: 'bind',
+      redirect_to: '/user/account'
+    }));
+    const redirectUri = encodeURIComponent(`https://m.run365.info/wx_auth_callback`);
+    window.location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${APP_ID}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_userinfo&state=${state}#wechat_redirect`;
   };
 
   return (
