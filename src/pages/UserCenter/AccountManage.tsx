@@ -9,13 +9,13 @@ import {
   Title,
   Stack,
   TextInput,
-  PasswordInput,
   Modal,
   Alert,
-  Divider,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconBrandWechat, IconMail, IconLock, IconCheck, IconAlertCircle, IconPhone } from '@tabler/icons-react';
+import { IconBrandWechat, IconMail, IconCheck, IconAlertCircle } from '@tabler/icons-react';
+// 暂时隐藏手机号功能
+// import { IconPhone } from '@tabler/icons-react';
 import request from '../../utils/request';
 import type { UserInfo } from '../../types/user';
 import { APP_ID } from '../../constants';
@@ -29,68 +29,148 @@ export default function AccountManage() {
   const { user, setUser } = useOutletContext<OutletContext>();
   
   const [bindEmailOpened, { open: openBindEmail, close: closeBindEmail }] = useDisclosure(false);
-  const [setPasswordOpened, { open: openSetPassword, close: closeSetPassword }] = useDisclosure(false);
-  const [bindPhoneOpened, { open: openBindPhone, close: closeBindPhone }] = useDisclosure(false);
+  // 暂时隐藏手机号功能
+  // const [bindPhoneOpened, { open: openBindPhone, close: closeBindPhone }] = useDisclosure(false);
   
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [smsCode, setSmsCode] = useState('');
-  const [countdown, setCountdown] = useState(0);
-  const [sendingCode, setSendingCode] = useState(false);
+  const [emailCode, setEmailCode] = useState('');
+  const [emailCountdown, setEmailCountdown] = useState(0);
+  const [sendingEmailCode, setSendingEmailCode] = useState(false);
+  // 暂时隐藏手机号功能
+  // const [phone, setPhone] = useState('');
+  // const [smsCode, setSmsCode] = useState('');
+  // const [countdown, setCountdown] = useState(0);
+  // const [sendingCode, setSendingCode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const hasWechat = !!user.openid;
   const hasEmail = !!user.email;
-  const hasPassword = user.has_password;
-  const hasPhone = !!user.phone;
+  // 暂时隐藏手机号功能
+  // const hasPhone = !!user.phone;
+
+  // 暂时隐藏手机号功能
+  // useEffect(() => {
+  //   if (countdown > 0) {
+  //     const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+  //     return () => clearTimeout(timer);
+  //   }
+  // }, [countdown]);
 
   useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    if (emailCountdown > 0) {
+      const timer = setTimeout(() => setEmailCountdown(emailCountdown - 1), 1000);
       return () => clearTimeout(timer);
     }
-  }, [countdown]);
+  }, [emailCountdown]);
 
-  const validatePhone = (value: string) => {
-    return /^1[3-9]\d{9}$/.test(value);
+  const validateEmail = (value: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   };
 
-  const handleSendCode = async () => {
-    if (!validatePhone(phone)) {
-      setError('请输入有效的手机号码');
+  // 暂时隐藏手机号功能
+  // const validatePhone = (value: string) => {
+  //   return /^1[3-9]\d{9}$/.test(value);
+  // };
+
+  // const handleSendCode = async () => {
+  //   if (!validatePhone(phone)) {
+  //     setError('请输入有效的手机号码');
+  //     return;
+  //   }
+
+  //   setSendingCode(true);
+  //   setError(null);
+
+  //   try {
+  //     await request({
+  //       url: '/api/v2/auth/send-sms/',
+  //       method: 'POST',
+  //       data: { phone },
+  //     });
+  //     setCountdown(60);
+  //   } catch (e: unknown) {
+  //     const err = e as { response?: { data?: { error?: string } } };
+  //     setError(err.response?.data?.error || '发送验证码失败');
+  //   } finally {
+  //     setSendingCode(false);
+  //   }
+  // };
+
+  // const handleBindPhone = async () => {
+  //   if (!validatePhone(phone)) {
+  //     setError('请输入有效的手机号码');
+  //     return;
+  //   }
+  //   if (!smsCode || smsCode.length < 4) {
+  //     setError('请输入验证码');
+  //     return;
+  //   }
+    
+  //   setLoading(true);
+  //   setError(null);
+    
+  //   try {
+  //     const res: any = await request({
+  //       url: '/api/v2/auth/bind-phone/',
+  //       method: 'POST',
+  //       data: { phone, code: smsCode },
+  //     });
+      
+  //     if (res.data) {
+  //       setUser(res.data);
+  //     } else {
+  //       setUser({ ...user, phone: parseInt(phone) });
+  //     }
+  //     setSuccess('手机号绑定成功');
+  //     closeBindPhone();
+  //     setPhone('');
+  //     setSmsCode('');
+  //   } catch (e: unknown) {
+  //     const err = e as { response?: { data?: { code?: string; error?: string } } };
+  //     if (err.response?.data?.code === 'PHONE_CONFLICT') {
+  //       setError('该手机号已被其他账户使用');
+  //     } else if (err.response?.data?.code === 'INVALID_CODE') {
+  //       setError('验证码错误或已过期');
+  //     } else {
+  //       setError(err.response?.data?.error || '绑定失败');
+  //     }
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const handleSendEmailCode = async () => {
+    if (!validateEmail(email)) {
+      setError('请输入有效的邮箱地址');
       return;
     }
 
-    setSendingCode(true);
+    setSendingEmailCode(true);
     setError(null);
 
     try {
       await request({
-        url: '/api/v2/auth/send-sms/',
+        url: '/api/v2/auth/send-email-code/',
         method: 'POST',
-        data: { phone },
+        data: { email },
       });
-      setCountdown(60);
+      setEmailCountdown(60);
     } catch (e: unknown) {
       const err = e as { response?: { data?: { error?: string } } };
       setError(err.response?.data?.error || '发送验证码失败');
     } finally {
-      setSendingCode(false);
+      setSendingEmailCode(false);
     }
   };
 
-  const handleBindPhone = async () => {
-    if (!validatePhone(phone)) {
-      setError('请输入有效的手机号码');
+  const handleBindEmail = async () => {
+    if (!validateEmail(email)) {
+      setError('请输入有效的邮箱地址');
       return;
     }
-    if (!smsCode || smsCode.length < 4) {
+    if (!emailCode || emailCode.length < 4) {
       setError('请输入验证码');
       return;
     }
@@ -100,110 +180,46 @@ export default function AccountManage() {
     
     try {
       const res: any = await request({
-        url: '/api/v2/auth/bind-phone/',
+        url: '/api/v2/auth/bind-email-with-code/',
         method: 'POST',
-        data: { phone, code: smsCode },
+        data: { email, code: emailCode },
       });
       
       if (res.data) {
-        setUser(res.data);
+        // 更新 token
+        if (res.data.token) {
+          localStorage.setItem('rc-user-token', res.data.token);
+        }
+        if (res.data.refresh) {
+          localStorage.setItem('rc-user-refresh-token', res.data.refresh);
+        }
+        // 更新用户信息
+        if (res.data.user) {
+          setUser(res.data.user);
+        }
+        // 提示合并信息
+        if (res.data.merged) {
+          setSuccess('邮箱绑定成功，账户已合并');
+        } else {
+          setSuccess('邮箱绑定成功');
+        }
       } else {
-        setUser({ ...user, phone: parseInt(phone) });
+        setUser({ ...user, email });
+        setSuccess('邮箱绑定成功');
       }
-      setSuccess('手机号绑定成功');
-      closeBindPhone();
-      setPhone('');
-      setSmsCode('');
-    } catch (e: unknown) {
-      const err = e as { response?: { data?: { code?: string; error?: string } } };
-      if (err.response?.data?.code === 'PHONE_CONFLICT') {
-        setError('该手机号已被其他账户使用');
-      } else if (err.response?.data?.code === 'INVALID_CODE') {
-        setError('验证码错误或已过期');
-      } else {
-        setError(err.response?.data?.error || '绑定失败');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBindEmail = async () => {
-    if (!email) {
-      setError('请输入邮箱');
-      return;
-    }
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      await request({
-        url: '/api/v2/auth/bind-email/',
-        method: 'POST',
-        data: { email, password: password || undefined },
-      });
-      
-      setUser({ ...user, email, has_password: password ? true : user.has_password });
-      setSuccess('邮箱绑定成功');
       closeBindEmail();
       setEmail('');
-      setPassword('');
+      setEmailCode('');
     } catch (e: unknown) {
       const err = e as { response?: { data?: { code?: string; error?: string } } };
-      if (err.response?.data?.code === 'EMAIL_CONFLICT') {
-        setError('该邮箱已被其他账户使用');
+      if (err.response?.data?.code === 'EMAIL_ALREADY_BOUND') {
+        setError('当前账户已绑定邮箱');
+      } else if (err.response?.data?.code === 'INVALID_CODE') {
+        setError('验证码错误或已过期');
+      } else if (err.response?.data?.code === 'EMAIL_ACCOUNT_MERGED') {
+        setError('该邮箱账户已被合并到其他账户');
       } else {
         setError(err.response?.data?.error || '绑定失败');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSetPassword = async () => {
-    if (!newPassword) {
-      setError('请输入新密码');
-      return;
-    }
-    if (newPassword.length < 6) {
-      setError('密码长度至少6位');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError('两次输入的密码不一致');
-      return;
-    }
-    if (hasPassword && !oldPassword) {
-      setError('请输入原密码');
-      return;
-    }
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      await request({
-        url: '/api/v2/auth/set-password/',
-        method: 'POST',
-        data: {
-          password: newPassword,
-          old_password: hasPassword ? oldPassword : undefined,
-        },
-      });
-      
-      setUser({ ...user, has_password: true });
-      setSuccess('密码设置成功');
-      closeSetPassword();
-      setOldPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (e: unknown) {
-      const err = e as { response?: { data?: { code?: string; error?: string } } };
-      if (err.response?.data?.code === 'INVALID_OLD_PASSWORD') {
-        setError('原密码错误');
-      } else {
-        setError(err.response?.data?.error || '设置失败');
       }
     } finally {
       setLoading(false);
@@ -279,31 +295,8 @@ export default function AccountManage() {
           </Group>
         </Card>
 
-        {/* 密码状态 */}
-        <Card shadow="sm" padding="lg" radius="md" withBorder>
-          <Group justify="space-between">
-            <Group>
-              <IconLock size={24} color="#868E96" />
-              <div>
-                <Text fw={500}>登录密码</Text>
-                <Text size="sm" c="dimmed">
-                  {hasPassword ? '已设置密码' : '未设置密码，设置后可使用密码登录'}
-                </Text>
-              </div>
-            </Group>
-            <Group>
-              <Badge color={hasPassword ? 'green' : 'gray'} variant="light">
-                {hasPassword ? '已设置' : '未设置'}
-              </Badge>
-              <Button variant="light" size="sm" onClick={openSetPassword}>
-                {hasPassword ? '修改密码' : '设置密码'}
-              </Button>
-            </Group>
-          </Group>
-        </Card>
-
-        {/* 手机号绑定状态 */}
-        <Card shadow="sm" padding="lg" radius="md" withBorder>
+        {/* 手机号绑定状态 - 暂时隐藏 */}
+        {/* <Card shadow="sm" padding="lg" radius="md" withBorder>
           <Group justify="space-between">
             <Group>
               <IconPhone size={24} color="#FA5252" />
@@ -325,7 +318,7 @@ export default function AccountManage() {
               )}
             </Group>
           </Group>
-        </Card>
+        </Card> */}
 
         {/* 账户安全提示 */}
         {!hasWechat && !hasEmail && (
@@ -350,58 +343,34 @@ export default function AccountManage() {
             value={email}
             onChange={(e) => setEmail(e.currentTarget.value)}
           />
-          <Divider label="同时设置密码（可选）" labelPosition="center" />
-          <PasswordInput
-            label="登录密码"
-            placeholder="至少6位，可选"
-            value={password}
-            onChange={(e) => setPassword(e.currentTarget.value)}
-          />
+          <Group align="flex-end" gap="xs">
+            <TextInput
+              label="验证码"
+              placeholder="请输入验证码"
+              required
+              value={emailCode}
+              onChange={(e) => setEmailCode(e.currentTarget.value)}
+              maxLength={6}
+              style={{ flex: 1 }}
+            />
+            <Button
+              variant="outline"
+              onClick={handleSendEmailCode}
+              loading={sendingEmailCode}
+              disabled={emailCountdown > 0 || !validateEmail(email)}
+              style={{ width: 120 }}
+            >
+              {emailCountdown > 0 ? `${emailCountdown}秒` : '获取验证码'}
+            </Button>
+          </Group>
           <Button loading={loading} onClick={handleBindEmail}>
             确认绑定
           </Button>
         </Stack>
       </Modal>
 
-      {/* 设置密码弹窗 */}
-      <Modal opened={setPasswordOpened} onClose={closeSetPassword} title={hasPassword ? '修改密码' : '设置密码'}>
-        <Stack>
-          {error && (
-            <Alert color="red" onClose={() => setError(null)} withCloseButton>
-              {error}
-            </Alert>
-          )}
-          {hasPassword && (
-            <PasswordInput
-              label="原密码"
-              placeholder="请输入原密码"
-              required
-              value={oldPassword}
-              onChange={(e) => setOldPassword(e.currentTarget.value)}
-            />
-          )}
-          <PasswordInput
-            label="新密码"
-            placeholder="至少6位"
-            required
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.currentTarget.value)}
-          />
-          <PasswordInput
-            label="确认新密码"
-            placeholder="再次输入新密码"
-            required
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.currentTarget.value)}
-          />
-          <Button loading={loading} onClick={handleSetPassword}>
-            确认
-          </Button>
-        </Stack>
-      </Modal>
-
-      {/* 绑定手机号弹窗 */}
-      <Modal opened={bindPhoneOpened} onClose={closeBindPhone} title="绑定手机号">
+      {/* 绑定手机号弹窗 - 暂时隐藏 */}
+      {/* <Modal opened={bindPhoneOpened} onClose={closeBindPhone} title="绑定手机号">
         <Stack>
           {error && (
             <Alert color="red" onClose={() => setError(null)} withCloseButton>
@@ -440,7 +409,7 @@ export default function AccountManage() {
             确认绑定
           </Button>
         </Stack>
-      </Modal>
+      </Modal> */}
     </div>
   );
 }
