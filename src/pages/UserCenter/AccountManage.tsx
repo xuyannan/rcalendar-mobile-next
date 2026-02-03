@@ -214,9 +214,8 @@ export default function AccountManage() {
     const state = encodeURIComponent(JSON.stringify({
       action: 'bind',
       redirect_to: '/user/account',
-      login_type: 'mobile',
     }));
-    const redirectUri = encodeURIComponent(`https://m.run365.info/wx_auth_callback`);
+    const redirectUri = encodeURIComponent(`https://m.run365.info/wx_auth_callback?login_type=mobile`);
     window.location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${APP_ID}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_userinfo&state=${state}#wechat_redirect`;
   };
 
