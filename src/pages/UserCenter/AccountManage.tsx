@@ -215,8 +215,8 @@ export default function AccountManage() {
       action: 'bind',
       redirect_to: '/user/account',
     }));
-    const redirectUri = encodeURIComponent(`https://m.run365.info/wx_auth_callback?login_type=mobile`);
-    window.location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${APP_ID}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_userinfo&state=${state}#wechat_redirect`;
+    const redirectUri = encodeURIComponent(`https://m.run365.info/wx_auth_callback?login_type=mobile&state=${state}`);
+    window.location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${APP_ID}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_userinfo#wechat_redirect`;
   };
 
   return (
