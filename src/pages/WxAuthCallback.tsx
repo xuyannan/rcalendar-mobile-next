@@ -13,21 +13,18 @@ const WxAuthCallback: React.FC = () => {
     useEffect(() => {
         const code = searchParams.get('code');
         const stateParam = searchParams.get('state');
-        const loginType = searchParams.get('login_type');
         
-        // 从 state 参数解析 action 和 redirect_to
+        // 从 state 参数解析 action, redirect_to, login_type
         let action: string | null = null;
         let redirectTo: string | null = null;
+        let loginType: string | null = null;
         
         if (stateParam && stateParam !== 'STATE') {
             try {
                 const stateObj = JSON.parse(decodeURIComponent(stateParam));
                 action = stateObj.action || null;
                 redirectTo = stateObj.redirect_to || null;
-                // 兼容扫码登录的 login_type
-                if (stateObj.login_type) {
-                    // loginType from state
-                }
+                loginType = stateObj.login_type || null;
             } catch {
                 // state 不是 JSON，可能是旧的 STATE 字符串，忽略
             }
