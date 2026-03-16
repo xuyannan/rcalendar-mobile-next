@@ -9,7 +9,7 @@ services:
       - "8083:80"
     volumes:
       # 挂载宿主机的下载目录到容器（文件不打包在镜像中）
-      - /data/rcalendar-mobile/downloads:/data/downloads:ro
+      - /home/ubuntu/workspace/rcalendar-mobile-next/downloads:/data/downloads:ro
     extra_hosts:
       # 允许容器通过 host.docker.internal 访问宿主机
       - "host.docker.internal:host-gateway"
