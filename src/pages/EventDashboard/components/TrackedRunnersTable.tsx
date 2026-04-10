@@ -226,6 +226,15 @@ const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group, visibl
         };
       }
       
+      // 没有打卡时间，但有预测时间
+      if (cpData.prediction) {
+        return {
+          display: cpData.prediction,
+          isPredicted: true,
+          cumulativeTime: cpData.cumulative_time || undefined
+        };
+      }
+      
       return { display: '-', isPredicted: false, cumulativeTime: undefined };
     } catch {
       return { display: '-', isPredicted: false, cumulativeTime: undefined };
@@ -434,15 +443,23 @@ const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group, visibl
         );
       default:
         if (column.checkpointName) {
-          const { display, cumulativeTime } = parseCheckpointData(
+          const { display, isPredicted, cumulativeTime } = parseCheckpointData(
             runner.latestResult?.result,
             column.checkpointName
           );
           return (
             <Box style={{ whiteSpace: 'nowrap' }}>
-              <Text size="sm">{display}</Text>
+              <Text 
+                size="sm" 
+                fs={isPredicted ? 'italic' : undefined}
+                c={isPredicted ? 'orange' : undefined}
+              >
+                {isPredicted ? `~${display}` : display}
+              </Text>
               {cumulativeTime && (
-                <Text size="xs" c="dimmed">{formatCumulativeTime(cumulativeTime)}</Text>
+                <Text size="xs" c="dimmed" fs={isPredicted ? 'italic' : undefined}>
+                  {isPredicted ? '~' : ''}{formatCumulativeTime(cumulativeTime)}
+                </Text>
               )}
             </Box>
           );
