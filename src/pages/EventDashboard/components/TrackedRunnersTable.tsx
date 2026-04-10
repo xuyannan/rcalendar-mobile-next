@@ -369,6 +369,16 @@ const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group, visibl
     switch (column.key) {
       case 'nicknameAndBib':
         const isVisible = visibleRunnerIds ? visibleRunnerIds.has(runner.id!) : true;
+        // 解析排名
+        let sexRanking = '';
+        try {
+          if (runner.latestResult?.result) {
+            const resultData = JSON.parse(runner.latestResult.result);
+            if (resultData._ranking?.sex) {
+              sexRanking = resultData._ranking.sex;
+            }
+          }
+        } catch {}
         return (
           <Group gap={4} wrap="nowrap">
             {onToggleVisibility && (
@@ -382,7 +392,12 @@ const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group, visibl
               </ActionIcon>
             )}
             <Box style={{ whiteSpace: 'nowrap' }}>
-              <Text size="sm">{runner.nickname || runner.name || '-'}</Text>
+              <Group gap={4} wrap="nowrap">
+                <Text size="sm">{runner.nickname || runner.name || '-'}</Text>
+                {sexRanking && (
+                  <Badge size="xs" variant="light" color="blue">#{sexRanking}</Badge>
+                )}
+              </Group>
               <Text size="xs" c="dimmed">{runner.bibNumber || '-'}</Text>
             </Box>
           </Group>
