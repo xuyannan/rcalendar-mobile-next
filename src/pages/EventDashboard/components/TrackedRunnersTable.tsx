@@ -392,12 +392,10 @@ const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group, visibl
               </ActionIcon>
             )}
             <Box style={{ whiteSpace: 'nowrap' }}>
-              <Group gap={4} wrap="nowrap">
-                <Text size="sm">{runner.nickname || runner.name || '-'}</Text>
-                {sexRanking && (
-                  <Badge size="xs" variant="light" color="blue">#{sexRanking}</Badge>
-                )}
-              </Group>
+              <Text size="sm">{runner.nickname || runner.name || '-'}</Text>
+              {sexRanking && (
+                <Badge size="xs" variant="light" color="blue">性别 #{sexRanking}</Badge>
+              )}
               <Text size="xs" c="dimmed">{runner.bibNumber || '-'}</Text>
             </Box>
           </Group>
