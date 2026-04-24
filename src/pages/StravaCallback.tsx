@@ -64,6 +64,14 @@ const StravaCallback: React.FC = () => {
     }
 
     if (success) {
+        const handleBack = () => {
+            const isMiniProgram = (window as any).__wxjs_environment === 'miniprogram';
+            if (isMiniProgram) {
+                (window as any).wx?.miniProgram?.navigateBack({ delta: 1 });
+            } else {
+                navigate('/user/bindDevice');
+            }
+        };
         return (
              <div style={{ padding: 20 }}>
                 <Result
@@ -72,7 +80,7 @@ const StravaCallback: React.FC = () => {
                     title="绑定成功"
                     description="您已成功绑定 Strava 账号，您的运动记录会自动同步到跑者日历平台"
                 />
-                <Button block color='primary' onClick={() => navigate('/user/bindDevice')}>返回设备绑定</Button>
+                <Button block color='primary' onClick={handleBack}>返回设备绑定</Button>
             </div>
         )
     }

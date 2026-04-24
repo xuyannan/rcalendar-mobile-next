@@ -65,6 +65,15 @@ const GarminCallback: React.FC = () => {
         handleCallback();
     }, [searchParams]);
 
+    const handleBack = () => {
+        const isMiniProgram = (window as any).__wxjs_environment === 'miniprogram';
+        if (isMiniProgram) {
+            (window as any).wx?.miniProgram?.navigateBack({ delta: 1 });
+        } else {
+            navigate('/user/bindDevice');
+        }
+    };
+
     return (
         <div style={{ 
             padding: 40, 
@@ -86,7 +95,7 @@ const GarminCallback: React.FC = () => {
                 <Button 
                     color="primary" 
                     style={{ marginTop: 20 }}
-                    onClick={() => navigate('/user/bindDevice')}
+                    onClick={handleBack}
                 >
                     返回设备绑定
                 </Button>
