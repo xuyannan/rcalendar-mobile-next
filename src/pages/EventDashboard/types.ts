@@ -19,6 +19,7 @@ export interface TrackedRunner {
   isAutoRefresh: boolean;
   canRefresh: boolean;
   nextRefreshIn: number;
+  trialShoe?: string;
 }
 
 export interface RunnerLocation {

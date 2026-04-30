@@ -16,6 +16,10 @@ import UserCenter from '../pages/UserCenter';
 import BindDevice from '../pages/UserCenter/BindDevice';
 import AccountManage from '../pages/UserCenter/AccountManage';
 import MyWorkouts from '../pages/UserCenter/MyWorkouts';
+import StoreIndex from '../pages/Store/StoreIndex';
+import StoreCheckout from '../pages/Store/StoreCheckout';
+import StoreOrders from '../pages/Store/StoreOrders';
+import StoreOrderDetail from '../pages/Store/StoreOrderDetail';
 
 const router = createBrowserRouter([
   {
@@ -56,7 +60,23 @@ const router = createBrowserRouter([
       { path: 'wx_auth_callback', element: <WxAuthCallback /> },
       { path: 'privacy', element: <PrivacyPolicy /> },
     ]
-  }
+  },
+  {
+    path: '/store',
+    element: <StoreIndex />,
+  },
+  {
+    path: '/store/checkout',
+    element: <StoreCheckout />,
+  },
+  {
+    path: '/store/orders',
+    element: <StoreOrders />,
+  },
+  {
+    path: '/store/orders/:id',
+    element: <StoreOrderDetail />,
+  },
 ]);
 
 export default router;

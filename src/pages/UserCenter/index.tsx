@@ -19,10 +19,18 @@ export default function UserCenter() {
   const navigate = useNavigate();
   const [user, setUser] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(false);
+
+  const isMiniProgram = new URLSearchParams(window.location.search).get('from') === 'miniprogram';
 
   useEffect(() => {
     const token = localStorage.getItem(STORAGE_USER_TOKEN);
     if (!token) {
+      if (isMiniProgram) {
+        setAuthError(true);
+        setLoading(false);
+        return;
+      }
       navigate('/login?redirect_to=' + encodeURIComponent(location.pathname));
       return;
     }
@@ -34,18 +42,34 @@ export default function UserCenter() {
       .catch(() => {
         localStorage.removeItem(STORAGE_USER_TOKEN);
         localStorage.removeItem(STORAGE_USER_REFRESH_TOKEN);
-        navigate('/login');
+        if (isMiniProgram) {
+          setAuthError(true);
+        } else {
+          navigate('/login');
+        }
       })
       .finally(() => setLoading(false));
-  }, [navigate, location.pathname]);
+  }, [navigate, location.pathname, isMiniProgram]);
 
   if (loading) {
     return (
       <>
-        <HeaderMegaMenu />
+        {!isMiniProgram && <HeaderMegaMenu />}
         <Box p="xl">加载中...</Box>
       </>
     );
+  }
+
+  if (authError) {
+    return (
+      <Box p="xl" style={{ textAlign: 'center', paddingTop: 60 }}>
+        <Text c="dimmed">登录状态已失效，请返回小程序重新进入</Text>
+      </Box>
+    );
+  }
+
+  if (isMiniProgram) {
+    return <Outlet context={{ user, setUser }} />;
   }
 
   const links = navItems.map((item) => (
