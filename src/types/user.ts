@@ -22,4 +22,5 @@ export interface ThirdPartyAccount {
   syncedAt: string | null;
   createdAt: string;
   backfillCompleted: boolean;
+  needsReauth?: boolean;
 }

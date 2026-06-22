@@ -219,8 +219,8 @@ export default function BindDevice() {
                     )}
                   </div>
                 </Group>
-                <Badge color={isBound ? 'green' : 'gray'} variant="light">
-                  {isBound ? '已绑定' : '未绑定'}
+                <Badge color={isBound ? (account.needsReauth ? 'red' : 'green') : 'gray'} variant="light">
+                  {isBound ? (account.needsReauth ? '需重新授权' : '已绑定') : '未绑定'}
                 </Badge>
               </Group>
 
@@ -237,7 +237,27 @@ export default function BindDevice() {
                       最后同步: {new Date(account.syncedAt).toLocaleString()}
                     </Text>
                   )}
+                  {account.needsReauth && (
+                    <Group gap="xs">
+                      <IconAlertTriangle size={16} color="red" />
+                      <Text size="xs" c="red">
+                        授权已失效，请重新授权以继续同步数据
+                      </Text>
+                    </Group>
+                  )}
                   <Group gap="xs" mt="sm">
+                    {account.needsReauth && (
+                      <Button
+                        variant="filled"
+                        color="orange"
+                        size="sm"
+                        leftSection={<IconRefresh size={16} />}
+                        loading={device.provider === 'Garmin' && garminBinding}
+                        onClick={() => handleBind(device)}
+                      >
+                        重新授权
+                      </Button>
+                    )}
                     <Button
                       variant="light"
                       color="blue"
