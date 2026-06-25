@@ -380,9 +380,6 @@ const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group, visibl
           }
         } catch {}
         
-        // 确定鞋子显示文本
-        const shoeText = runner.trialShoe || '自备鞋';
-        
         return (
           <Group gap={4} wrap="nowrap">
             {onToggleVisibility && (
@@ -398,7 +395,6 @@ const TrackedRunnersTable: React.FC<TrackedRunnersTableProps> = ({ group, visibl
             <Box style={{ whiteSpace: 'nowrap' }}>
               <Group gap={4} wrap="nowrap">
                 <Text size="sm">{runner.nickname || runner.name || '-'}</Text>
-                <Text size="xs" c="dimmed">({shoeText})</Text>
               </Group>
               {sexRanking && (
                 <Badge size="xs" variant="light" color="blue">性别 #{sexRanking}</Badge>
