@@ -2,8 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import Home from '../pages/Home';
 import IndexNew from '../pages/IndexNew';
-import StravaBind from '../pages/StravaBind';
-import StravaCallback from '../pages/StravaCallback';
+import StravaCallbackV2 from '../pages/StravaCallbackV2';
 import GarminCallback from '../pages/GarminCallback';
 import CorosBind from '../pages/CorosBind';
 import CorosCallback from '../pages/CorosCallback';
@@ -52,8 +51,7 @@ const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { path: 'home', element: <Home /> },
-      { path: 'bind_strava', element: <StravaBind /> },
-      { path: 'strava_callback', element: <StravaCallback /> },
+      { path: 'strava_callback_v2', element: <StravaCallbackV2 /> },
       { path: 'garmin_callback', element: <GarminCallback /> },
       { path: 'bind_coros', element: <CorosBind /> },
       { path: 'coros_callback', element: <CorosCallback /> },

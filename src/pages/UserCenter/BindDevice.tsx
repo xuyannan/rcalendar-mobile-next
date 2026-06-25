@@ -72,7 +72,7 @@ const devices: DeviceConfig[] = [
     color: 'orange',
     description: '',
     getAuthUrl: () => {
-      const redirectUri = encodeURIComponent(`${window.location.origin}/strava_callback`);
+      const redirectUri = encodeURIComponent(`${window.location.origin}/strava_callback_v2`);
       return `https://www.strava.com/oauth/authorize?client_id=${STRAVA_APPID}&response_type=code&redirect_uri=${redirectUri}&scope=read,activity:read_all`;
     },
   },

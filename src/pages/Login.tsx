@@ -25,7 +25,7 @@ import request from '../utils/request';
 import {
   STORAGE_USER_TOKEN,
   STORAGE_USER_REFRESH_TOKEN,
-  WX_LOGIN_URL,
+  APP_ID,
   WX_OPEN_APPID,
 } from '../constants';
 
@@ -318,7 +318,7 @@ const Login = () => {
     const callbackUrl = encodeURIComponent(
       `${window.location.origin}/wx_auth_callback?redirect_to=${encodeURIComponent(redirectTo)}`
     );
-    window.location.href = `${WX_LOGIN_URL}&redirect_uri=${callbackUrl}`;
+    window.location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${APP_ID}&redirect_uri=${callbackUrl}&response_type=code&scope=snsapi_userinfo&state=STATE#wechat_redirect`;
   };
 
   const TermsCheckbox = () => (

@@ -13,7 +13,13 @@ const WxAuthCallback: React.FC = () => {
     useEffect(() => {
         const code = searchParams.get('code');
         const stateParam = searchParams.get('state');
-        
+
+        // 仅允许站内路径跳转，防止开放重定向
+        const rawRedirect = searchParams.get('redirect_to') || '/';
+        const redirectTo = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')
+            ? rawRedirect
+            : '/';
+
         // state=bind 表示绑定微信操作
         const isBind = stateParam === 'bind';
 
@@ -61,7 +67,7 @@ const WxAuthCallback: React.FC = () => {
                     const { token, refresh } = data;
                     localStorage.setItem(STORAGE_USER_TOKEN, token);
                     localStorage.setItem(STORAGE_USER_REFRESH_TOKEN, refresh);
-                    window.location.href = '/';
+                    window.location.href = redirectTo;
                 } else {
                     setError(res);
                 }
