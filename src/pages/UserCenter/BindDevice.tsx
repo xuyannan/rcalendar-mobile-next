@@ -46,7 +46,7 @@ interface DeviceConfig {
 const devices: DeviceConfig[] = [
   {
     provider: 'Garmin',
-    name: 'Garmin',
+    name: 'Garmin 中国',
     icon: IconDeviceWatch,
     color: 'blue',
     description: '若要同步历史数据,请在绑定时打开"历史数据（Historical Data）"',

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Toast, SpinLoading, Button } from 'antd-mobile';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import request from '../utils/request';
@@ -8,9 +8,13 @@ const StravaCallbackV2: React.FC = () => {
     const navigate = useNavigate();
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [message, setMessage] = useState('正在绑定 Strava 账号...');
+    const handledRef = useRef(false);
 
     useEffect(() => {
         const handleCallback = async () => {
+            if (handledRef.current) return;
+            handledRef.current = true;
+
             const code = searchParams.get('code');
             const error = searchParams.get('error');
 
