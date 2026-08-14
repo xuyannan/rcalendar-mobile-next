@@ -33,6 +33,7 @@ import request from '../../utils/request';
 import { STORAGE_USER_TOKEN } from '../../constants';
 import RunnerCard from './components/RunnerCard';
 import RunnerSearchModal from './components/RunnerSearchModal';
+import TrackingBrandHeader from './components/TrackingBrandHeader';
 import type {
   LocalTrackingEntry,
   ResolutionCandidate,
@@ -320,6 +321,7 @@ const SharedTrackingBoard = ({
   return (
     <Box bg="gray.0" mih="100vh">
       <Container size="md" py="md">
+        <TrackingBrandHeader />
         <Stack gap="md">
           <Paper withBorder p="lg" radius="lg">
             <Stack gap="sm">

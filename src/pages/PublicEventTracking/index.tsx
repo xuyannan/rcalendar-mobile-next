@@ -49,6 +49,7 @@ import request from '../../utils/request';
 import { STORAGE_USER_TOKEN } from '../../constants';
 import RunnerCard, { RunnerProfileMeta } from './components/RunnerCard';
 import SharedTrackingBoard from './SharedTrackingBoard';
+import TrackingBrandHeader from './components/TrackingBrandHeader';
 import type {
   ConfirmResponse,
   LocalTrackingEntry,
@@ -639,6 +640,7 @@ const PersonalTrackingPage = () => {
   return (
     <Box bg="gray.0" mih="100vh">
       <Container size="md" py="md">
+        <TrackingBrandHeader />
         <Stack gap="md">
           <Paper withBorder p="lg" radius="lg">
             <Stack gap="xs">
