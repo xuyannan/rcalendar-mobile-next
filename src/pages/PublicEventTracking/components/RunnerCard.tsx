@@ -50,7 +50,7 @@ export const RunnerProfileMeta = ({
   const hasProfile = (
     profile.utmbIndex !== null
     && profile.utmbIndex !== undefined
-  ) || Boolean(profile.ageGroup || profile.brand);
+  ) || Boolean(profile.ageGroup || profile.brand || profile.nationality);
 
   if (!hasProfile) {
     return null;
@@ -72,6 +72,11 @@ export const RunnerProfileMeta = ({
         <Text size={compact ? 'xs' : 'sm'} c="dimmed" truncate>
           {profile.brand}
         </Text>
+      )}
+      {profile.nationality && (
+        <Badge color="teal" size={compact ? 'xs' : 'sm'} variant="light">
+          国籍 {profile.nationality}
+        </Badge>
       )}
     </Group>
   );
@@ -99,6 +104,25 @@ const CheckpointSummary = ({
     )}
   </Box>
 );
+
+const formatNumber = (value: number) => (
+  Number.isInteger(value)
+    ? String(value)
+    : value.toFixed(2).replace(/\.?0+$/, '')
+);
+
+const formatSegmentStats = (checkpoint: TrackingCheckpoint) => {
+  const stats = [];
+  if (checkpoint.segmentDistance !== null
+    && checkpoint.segmentDistance !== undefined) {
+    stats.push(`${formatNumber(checkpoint.segmentDistance)} km`);
+  }
+  if (checkpoint.segmentElevationGain !== null
+    && checkpoint.segmentElevationGain !== undefined) {
+    stats.push(`爬升 ${formatNumber(checkpoint.segmentElevationGain)} m`);
+  }
+  return stats.join(' · ');
+};
 
 const RunnerCard: React.FC<RunnerCardProps> = ({
   runner,
@@ -213,9 +237,9 @@ const RunnerCard: React.FC<RunnerCardProps> = ({
                           ? formatCheckpointTime(checkpoint)
                           : '—'}
                       </Text>
-                      {checkpoint.cumulativeTime && (
+                      {formatSegmentStats(checkpoint) && (
                         <Text size="xs" c="dimmed">
-                          累计 {formatCumulativeTime(checkpoint.cumulativeTime)}
+                          {formatSegmentStats(checkpoint)}
                         </Text>
                       )}
                     </Box>

@@ -2,6 +2,12 @@ import axios from 'axios';
 import { Toast } from 'antd-mobile';
 import { STORAGE_USER_TOKEN } from '../constants';
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    skipAuth?: boolean;
+  }
+}
+
 const service = axios.create({
   timeout: 10000,
 });
@@ -9,7 +15,7 @@ const service = axios.create({
 service.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem(STORAGE_USER_TOKEN);
-    if (token) {
+    if (token && !config.skipAuth) {
       config.headers['Authorization'] = `JWT ${token}`;
     }
     return config;

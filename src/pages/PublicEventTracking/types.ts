@@ -10,6 +10,8 @@ export interface TrackingCheckpoint {
   name: string;
   providerPointId?: string | number | null;
   distance?: number | null;
+  segmentDistance?: number | null;
+  segmentElevationGain?: number | null;
   pointType: string;
   sortOrder: number;
   time?: string | null;
@@ -25,6 +27,7 @@ export interface OfficialRunnerProfile {
   utmbIndex?: number | null;
   ageGroup?: string | null;
   brand?: string | null;
+  nationality?: string | null;
 }
 
 export interface PublicTrackingRunner extends OfficialRunnerProfile {

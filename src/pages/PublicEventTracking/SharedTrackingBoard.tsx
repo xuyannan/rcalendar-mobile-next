@@ -103,6 +103,7 @@ const SharedTrackingBoard = ({
     queryKey: ['sharedTrackingBoard', shareToken],
     queryFn: async () => request.get(
       `/api/v2/tracking-boards/${shareToken}/`,
+      { skipAuth: true },
     ) as Promise<SharedTrackingResponse>,
     enabled: Boolean(shareToken),
     refetchInterval: REFRESH_INTERVAL,

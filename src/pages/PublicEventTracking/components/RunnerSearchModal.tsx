@@ -87,6 +87,7 @@ const RunnerSearchModal = ({
           bibNumber: normalizedBib,
           ...(groupId ? { eventGroupId: Number(groupId) } : {}),
         },
+        { skipAuth: true },
       ) as ResolveResponse;
       if (!response.candidates?.length) {
         setResolveError('未找到该号码布的选手');

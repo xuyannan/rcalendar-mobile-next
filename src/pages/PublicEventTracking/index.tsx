@@ -327,6 +327,7 @@ const PersonalTrackingPage = () => {
           bibNumber: normalizedBib,
           ...(groupId ? { eventGroupId: Number(groupId) } : {}),
         },
+        { skipAuth: true },
       ) as ResolveResponse;
       if (!response.candidates?.length) {
         setResolveError('未找到该号码布的选手');
@@ -647,13 +648,13 @@ const PersonalTrackingPage = () => {
                   <Title order={2}>{data.event.name}</Title>
                 </Box>
                 <Stack gap="xs" align="flex-end">
-                  <Badge variant="light">
+                  {/* <Badge variant="light">
                     {formatEventDateTime(
                       data.event.date,
                       data.event.timezone,
                       data.event.dateBeijing,
                     )}
-                  </Badge>
+                  </Badge> */}
                   <Button
                     variant="light"
                     size="compact-sm"
@@ -665,7 +666,7 @@ const PersonalTrackingPage = () => {
                 </Stack>
               </Group>
               <Text size="sm" c="dimmed">
-                这是你的个人关注列表。分享链接会以共享模式打开，不会替换你的关注列表。
+                这是你的个人关注列表。分享链接会以<b>共享模式</b>打开，不会替换你的关注列表。
               </Text>
             </Stack>
           </Paper>
