@@ -103,13 +103,15 @@ const isWeChatBrowser = () => {
   return ua.includes('micromessenger');
 };
 
+const PHONE_LOGIN_ENABLED = false;
+
 const Login = () => {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect_to') || '/';
   const isWeChat = isWeChatBrowser();
 
   const [activeTab, setActiveTab] = useState<string | null>(
-    isWeChat ? 'wechat' : 'phone'
+    isWeChat ? 'wechat' : 'email'
   );
   const isMobile = useMediaQuery('(max-width: 480px)');
 
@@ -362,9 +364,11 @@ const Login = () => {
                 {!isMobile && '微信登录'}
               </Tabs.Tab>
             )}
-            <Tabs.Tab value="phone" leftSection={<IconPhone size={16} color={activeTab === 'phone' ? '#228be6' : undefined} />}>
-              {!isMobile && '手机号'}
-            </Tabs.Tab>
+            {PHONE_LOGIN_ENABLED && (
+              <Tabs.Tab value="phone" leftSection={<IconPhone size={16} color={activeTab === 'phone' ? '#228be6' : undefined} />}>
+                {!isMobile && '手机号'}
+              </Tabs.Tab>
+            )}
             <Tabs.Tab value="email" leftSection={<IconMail size={16} color={activeTab === 'email' ? '#fa5252' : undefined} />}>
               {!isMobile && '邮箱'}
             </Tabs.Tab>
@@ -397,8 +401,9 @@ const Login = () => {
             </Tabs.Panel>
           )}
 
-          {/* 手机号登录 */}
-          <Tabs.Panel value="phone" pt="xl">
+          {/* 手机号登录（暂时隐藏） */}
+          {PHONE_LOGIN_ENABLED && (
+            <Tabs.Panel value="phone" pt="xl">
             <Stack>
               <TextInput
                 label="手机号"
@@ -435,8 +440,9 @@ const Login = () => {
               <Text size="xs" c="dimmed" ta="center">
                 未注册用户将自动创建账户
               </Text>
-            </Stack>
-          </Tabs.Panel>
+              </Stack>
+            </Tabs.Panel>
+          )}
 
           {/* 邮箱登录 */}
           <Tabs.Panel value="email" pt="xl">

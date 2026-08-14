@@ -9,6 +9,8 @@ import CorosCallback from '../pages/CorosCallback';
 import WxAuthCallback from '../pages/WxAuthCallback';
 import PrivacyPolicy from '../pages/PrivacyPolicy';
 import EventDashboard from '../pages/EventDashboard';
+import PublicEventTracking from '../pages/PublicEventTracking';
+import SharedTrackingBoard from '../pages/PublicEventTracking/SharedTrackingBoard';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import UserCenter from '../pages/UserCenter';
@@ -28,6 +30,14 @@ const router = createBrowserRouter([
   {
     path: '/events/:id/dashboard',
     element: <EventDashboard />,
+  },
+  {
+    path: '/events/:id/tracking',
+    element: <PublicEventTracking />,
+  },
+  {
+    path: '/tracking/board/:shareToken',
+    element: <SharedTrackingBoard />,
   },
   {
     path: '/login',
