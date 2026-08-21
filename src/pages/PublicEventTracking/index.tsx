@@ -31,6 +31,7 @@ import {
   IconSearch,
   IconShare,
   IconTrash,
+  IconUsers,
 } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -650,6 +651,14 @@ const PersonalTrackingPage = () => {
                   <Title order={2}>{data.event.name}</Title>
                 </Box>
                 <Stack gap="xs" align="flex-end">
+                  <Button
+                    variant="subtle"
+                    size="compact-sm"
+                    leftSection={<IconUsers size={15} />}
+                    onClick={() => navigate(`/events/${eventId}/athletes`)}
+                  >
+                    全部运动员
+                  </Button>
                   {/* <Badge variant="light">
                     {formatEventDateTime(
                       data.event.date,

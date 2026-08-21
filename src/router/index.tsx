@@ -10,6 +10,7 @@ import WxAuthCallback from '../pages/WxAuthCallback';
 import PrivacyPolicy from '../pages/PrivacyPolicy';
 import EventDashboard from '../pages/EventDashboard';
 import PublicEventTracking from '../pages/PublicEventTracking';
+import EventAthletes from '../pages/EventAthletes';
 import SharedTrackingBoard from '../pages/PublicEventTracking/SharedTrackingBoard';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
@@ -34,6 +35,10 @@ const router = createBrowserRouter([
   {
     path: '/events/:id/tracking',
     element: <PublicEventTracking />,
+  },
+  {
+    path: '/events/:id/athletes',
+    element: <EventAthletes />,
   },
   {
     path: '/tracking/board/:shareToken',
