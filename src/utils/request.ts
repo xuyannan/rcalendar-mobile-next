@@ -9,7 +9,7 @@ declare module 'axios' {
 }
 
 const service = axios.create({
-  timeout: 10000,
+  timeout: 30000,
 });
 
 service.interceptors.request.use(

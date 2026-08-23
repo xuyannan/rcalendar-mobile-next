@@ -75,7 +75,7 @@ export const RunnerProfileMeta = ({
       )}
       {profile.nationality && (
         <Badge color="teal" size={compact ? 'xs' : 'sm'} variant="light">
-          国籍 {profile.nationality}
+          {profile.nationality}
         </Badge>
       )}
     </Group>
@@ -139,8 +139,20 @@ const RunnerCard: React.FC<RunnerCardProps> = ({
   return (
     <Card withBorder radius="md" shadow="sm" padding="md">
       <Stack gap="sm">
-        <Group justify="space-between" align="flex-start" wrap="nowrap">
-          <Group align="flex-start" gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+        <Group
+          justify="space-between"
+          align="flex-start"
+          wrap="nowrap"
+          gap="sm"
+          preventGrowOverflow={false}
+        >
+          <Group
+            align="flex-start"
+            gap="sm"
+            wrap="nowrap"
+            preventGrowOverflow={false}
+            style={{ minWidth: 0, flex: 1 }}
+          >
             <Avatar
               src={runner.avatarUrl || undefined}
               alt={runner.name || displayName}
@@ -149,8 +161,8 @@ const RunnerCard: React.FC<RunnerCardProps> = ({
             >
               {displayName.charAt(0).toUpperCase()}
             </Avatar>
-            <Box style={{ minWidth: 0 }}>
-              <Group gap="xs" wrap="nowrap">
+            <Box style={{ minWidth: 0, flex: 1 }}>
+              <Group gap="xs" wrap="nowrap" preventGrowOverflow={false}>
                 <Text fw={700} size="lg" truncate>{displayName}</Text>
                 <Badge color={status.color} variant="light">
                   {status.label}
@@ -166,16 +178,27 @@ const RunnerCard: React.FC<RunnerCardProps> = ({
             </Box>
           </Group>
           {canRemove && (
-            <Button
-              variant="subtle"
-              color="red"
-              size="compact-xs"
-              leftSection={<IconTrash size={14} />}
-              loading={isRemoving}
-              onClick={() => onRemove(runner.id)}
-            >
-              移除
-            </Button>
+            <Box style={{ flexShrink: 0 }}>
+              <Button
+                variant="subtle"
+                color="red"
+                size="xs"
+                px="xs"
+                leftSection={<IconTrash size={14} />}
+                loading={isRemoving}
+                onClick={() => onRemove(runner.id)}
+                styles={{
+                  root: {
+                    whiteSpace: 'nowrap',
+                  },
+                  section: {
+                    marginInlineEnd: 4,
+                  },
+                }}
+              >
+                移除
+              </Button>
+            </Box>
           )}
         </Group>
 

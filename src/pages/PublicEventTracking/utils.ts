@@ -56,6 +56,56 @@ export const upsertLocalTracking = (
   next,
 ];
 
+const followedBibKey = (eventGroupId: number, bibNumber: string) =>
+  `${eventGroupId}:${String(bibNumber || '').trim()}`;
+
+export const buildFollowedRunnerIndex = (
+  runners: Array<{
+    id: number;
+    eventGroupId?: number;
+    bibNumber?: string;
+  }> = [],
+  localEntries: LocalTrackingEntry[] = [],
+) => {
+  const runnerIds = new Set<number>();
+  const bibKeys = new Set<string>();
+
+  for (const runner of runners) {
+    runnerIds.add(runner.id);
+    if (runner.eventGroupId && runner.bibNumber) {
+      bibKeys.add(followedBibKey(runner.eventGroupId, runner.bibNumber));
+    }
+  }
+  for (const entry of localEntries) {
+    runnerIds.add(entry.runnerId);
+    bibKeys.add(followedBibKey(entry.eventGroupId, entry.bibNumber));
+  }
+
+  return { runnerIds, bibKeys };
+};
+
+export const isAlreadyFollowed = (
+  candidate: {
+    trackedRunnerId?: number | null;
+    groupId?: number;
+    bibNumber: string;
+  },
+  index: { runnerIds: Set<number>; bibKeys: Set<string> },
+) => {
+  if (
+    candidate.trackedRunnerId
+    && index.runnerIds.has(candidate.trackedRunnerId)
+  ) {
+    return true;
+  }
+  if (!candidate.groupId) {
+    return false;
+  }
+  return index.bibKeys.has(
+    followedBibKey(candidate.groupId, candidate.bibNumber),
+  );
+};
+
 const timestamp = (value?: string | null) => {
   if (!value) {
     return null;

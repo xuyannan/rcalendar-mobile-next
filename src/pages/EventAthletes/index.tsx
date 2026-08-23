@@ -19,12 +19,14 @@ import {
 import { notifications } from '@mantine/notifications';
 import { IconArrowRight, IconSearch } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import request from '../../utils/request';
 import { STORAGE_USER_TOKEN } from '../../constants';
 import TrackingBrandHeader from '../PublicEventTracking/components/TrackingBrandHeader';
 import {
+  buildFollowedRunnerIndex,
+  isAlreadyFollowed,
   readLocalTracking,
   upsertLocalTracking,
   writeLocalTracking,
@@ -114,6 +116,10 @@ const EventAthletes = () => {
     eventId ? readLocalTracking(eventId) : []
   ));
 
+  useEffect(() => {
+    setLocalEntries(eventId ? readLocalTracking(eventId) : []);
+  }, [eventId]);
+
   const eventQuery = useQuery({
     queryKey: ['public-athlete-event', eventId],
     queryFn: async () => request.get(
@@ -167,13 +173,29 @@ const EventAthletes = () => {
     });
   };
 
-  const localRunnerIds = useMemo(
-    () => new Set(localEntries.map((entry) => entry.runnerId)),
+  const followedRunnerIndex = useMemo(
+    () => buildFollowedRunnerIndex([], localEntries),
     [localEntries],
+  );
+
+  const isAthleteFollowed = (athlete: Athlete) => (
+    athlete.isFollowed
+    || isAlreadyFollowed({
+      trackedRunnerId: athlete.id,
+      groupId: athlete.eventGroup,
+      bibNumber: athlete.bibNumber,
+    }, followedRunnerIndex)
   );
 
   const addToTracking = async (athlete: Athlete) => {
     if (!eventId || addingId !== null) return;
+    if (isAthleteFollowed(athlete)) {
+      notifications.show({
+        message: '该选手已在关注列表中',
+        color: 'blue',
+      });
+      return;
+    }
     setAddingId(athlete.id);
     try {
       const resolved = await request.post(
@@ -299,7 +321,7 @@ const EventAthletes = () => {
             </Text>
             <Stack gap="sm">
               {athletes.map((athlete) => {
-                const followed = athlete.isFollowed || localRunnerIds.has(athlete.id);
+                const followed = isAthleteFollowed(athlete);
                 return (
                   <Card key={athlete.id} withBorder radius="lg" padding="sm">
                     <Group wrap="nowrap" align="flex-start">
@@ -316,7 +338,7 @@ const EventAthletes = () => {
                             loading={addingId === athlete.id}
                             onClick={() => void addToTracking(athlete)}
                           >
-                            {followed ? '已追踪' : '加入追踪'}
+                            {followed ? '已关注' : '加入追踪'}
                           </Button>
                         </Group>
                         <Text size="sm" c="dimmed">

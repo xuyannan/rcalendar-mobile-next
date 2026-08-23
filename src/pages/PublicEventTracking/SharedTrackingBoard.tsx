@@ -101,10 +101,10 @@ const SharedTrackingBoard = ({
   }, []);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ['sharedTrackingBoard', shareToken],
+    queryKey: ['sharedTrackingBoard', shareToken, isAuthenticated],
     queryFn: async () => request.get(
       `/api/v2/tracking-boards/${shareToken}/`,
-      { skipAuth: true },
+      { ...(isAuthenticated ? {} : { skipAuth: true }) },
     ) as Promise<SharedTrackingResponse>,
     enabled: Boolean(shareToken),
     refetchInterval: REFRESH_INTERVAL,
@@ -392,7 +392,7 @@ const SharedTrackingBoard = ({
                 >
                   复制到我的关注
                 </Button>
-                {data.board.canAdd && (
+                {(data.board.isOwner || data.board.canAdd) && (
                   <Button
                     variant="light"
                     leftSection={<IconPlus size={16} />}
@@ -471,7 +471,9 @@ const SharedTrackingBoard = ({
         </Stack>
       </Container>
 
-      {data.board.canAdd && isAuthenticated && shareToken && (
+      {(data.board.isOwner || data.board.canAdd)
+        && isAuthenticated
+        && shareToken && (
         <RunnerSearchModal
           opened={addModalOpened}
           eventId={String(data.board.eventId)}

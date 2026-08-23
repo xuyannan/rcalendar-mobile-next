@@ -64,9 +64,11 @@ import type {
   TrackingBoardSummary,
 } from './types';
 import {
+  buildFollowedRunnerIndex,
   formatEventDateTime,
   getGroupState,
   groupStateLabel,
+  isAlreadyFollowed,
   readLocalTracking,
   sortTrackingGroups,
   upsertLocalTracking,
@@ -283,6 +285,16 @@ const PersonalTrackingPage = () => {
     [sortedGroups],
   );
 
+  const followedRunnerIndex = useMemo(
+    () => buildFollowedRunnerIndex(availableShareRunners, localEntries),
+    [availableShareRunners, localEntries],
+  );
+
+  const selectedCandidateFollowed = Boolean(
+    selectedCandidate
+    && isAlreadyFollowed(selectedCandidate, followedRunnerIndex),
+  );
+
   const buildShareLink = (board: TrackingBoardSummary) =>
     `${window.location.origin}/events/${board.eventId}/tracking?board=${
       encodeURIComponent(board.shareToken)
@@ -314,7 +326,7 @@ const PersonalTrackingPage = () => {
     }
     const normalizedBib = bibNumber.trim();
     if (!normalizedBib) {
-      setResolveError('请输入号码布');
+      setResolveError('请输入号码布或姓名');
       return;
     }
 
@@ -332,7 +344,7 @@ const PersonalTrackingPage = () => {
         { skipAuth: true },
       ) as ResolveResponse;
       if (!response.candidates?.length) {
-        setResolveError('未找到该号码布的选手');
+        setResolveError('未找到该选手');
         return;
       }
       setCandidates(response.candidates);
@@ -352,6 +364,13 @@ const PersonalTrackingPage = () => {
 
   const confirmRunner = async () => {
     if (!eventId || !selectedCandidate) {
+      return;
+    }
+    if (isAlreadyFollowed(selectedCandidate, followedRunnerIndex)) {
+      notifications.show({
+        message: '该选手已在关注列表中',
+        color: 'blue',
+      });
       return;
     }
     setIsConfirming(true);
@@ -588,8 +607,8 @@ const PersonalTrackingPage = () => {
   const renderSearchForm = () => (
     <Stack gap="sm">
       <TextInput
-        label="号码布"
-        placeholder="请输入号码布（必填）"
+        label="号码布或姓名"
+        placeholder="输入号码布，或至少 2 个字符的姓名"
         value={bibNumber}
         onChange={(event) => setBibNumber(event.currentTarget.value)}
         onKeyDown={(event) => {
@@ -615,7 +634,7 @@ const PersonalTrackingPage = () => {
         loading={isResolving}
         fullWidth
       >
-        查询号码布
+        查询选手
       </Button>
     </Stack>
   );
@@ -803,7 +822,7 @@ const PersonalTrackingPage = () => {
                   <Title order={4}>添加选手</Title>
                 </Group>
                 <Text size="sm" c="dimmed">
-                  输入号码布，查询并添加需要关注的选手。
+                  输入号码布或姓名，查询并添加需要关注的选手。
                 </Text>
                 {renderSearchForm()}
               </Stack>
@@ -906,33 +925,46 @@ const PersonalTrackingPage = () => {
               {candidates.length > 1 && !selectedCandidate && (
                 <>
                   <Text size="sm" c="dimmed">
-                    该号码布匹配多个公开组别，请选择一个：
+                    找到多位选手，请选择一个：
                   </Text>
-                  {candidates.map((candidate) => (
-                    <Button
-                      key={candidate.resolutionToken}
-                      variant="light"
-                      justify="space-between"
-                      onClick={() => setSelectedCandidate(candidate)}
-                    >
-                      <Group gap="xs" wrap="nowrap">
-                        <Avatar
-                          src={candidate.avatarUrl || undefined}
-                          alt={candidate.name || '选手'}
-                          size="sm"
-                          radius="xl"
-                        >
-                          {(candidate.name || '?').charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Box>
-                          <Text size="sm">
-                            {candidate.groupName} · {candidate.name || '姓名待定'}
-                          </Text>
-                          <RunnerProfileMeta profile={candidate} compact />
-                        </Box>
-                      </Group>
-                    </Button>
-                  ))}
+                  {candidates.map((candidate) => {
+                    const followed = isAlreadyFollowed(
+                      candidate,
+                      followedRunnerIndex,
+                    );
+                    return (
+                      <Button
+                        key={candidate.resolutionToken}
+                        variant="light"
+                        justify="space-between"
+                        onClick={() => setSelectedCandidate(candidate)}
+                      >
+                        <Group gap="xs" wrap="nowrap">
+                          <Avatar
+                            src={candidate.avatarUrl || undefined}
+                            alt={candidate.name || '选手'}
+                            size="sm"
+                            radius="xl"
+                          >
+                            {(candidate.name || '?').charAt(0).toUpperCase()}
+                          </Avatar>
+                          <Box>
+                            <Group gap="xs" wrap="nowrap">
+                              <Text size="sm">
+                                {candidate.groupName} · {candidate.name || '姓名待定'}
+                              </Text>
+                              {followed && (
+                                <Badge color="gray" variant="light" size="xs">
+                                  已关注
+                                </Badge>
+                              )}
+                            </Group>
+                            <RunnerProfileMeta profile={candidate} compact />
+                          </Box>
+                        </Group>
+                      </Button>
+                    );
+                  })}
                 </>
               )}
               {selectedCandidate && (
@@ -948,9 +980,16 @@ const PersonalTrackingPage = () => {
                         {(selectedCandidate.name || '?').charAt(0).toUpperCase()}
                       </Avatar>
                       <Box>
-                        <Text fw={600}>
-                          {selectedCandidate.name || '姓名待定'}
-                        </Text>
+                        <Group gap="xs" wrap="nowrap">
+                          <Text fw={600}>
+                            {selectedCandidate.name || '姓名待定'}
+                          </Text>
+                          {selectedCandidateFollowed && (
+                            <Badge color="gray" variant="light" size="sm">
+                              已关注
+                            </Badge>
+                          )}
+                        </Group>
                         <Text size="sm" c="dimmed">
                           #{selectedCandidate.bibNumber} · {selectedCandidate.groupName}
                         </Text>
@@ -964,13 +1003,17 @@ const PersonalTrackingPage = () => {
                       </Text>
                     )}
                   </Paper>
-                  <TextInput
-                    label="昵称（可选）"
-                    placeholder="你熟悉的名字或绰号"
-                    value={nickname}
-                    onChange={(event) => setNickname(event.currentTarget.value)}
-                    maxLength={128}
-                  />
+                  {selectedCandidateFollowed ? (
+                    <Text size="sm" c="dimmed">该选手已在关注列表中。</Text>
+                  ) : (
+                    <TextInput
+                      label="昵称（可选）"
+                      placeholder="你熟悉的名字或绰号"
+                      value={nickname}
+                      onChange={(event) => setNickname(event.currentTarget.value)}
+                      maxLength={128}
+                    />
+                  )}
                   <Group justify="flex-end">
                     {candidates.length > 1 && (
                       <Button
@@ -986,8 +1029,9 @@ const PersonalTrackingPage = () => {
                     <Button
                       onClick={() => void confirmRunner()}
                       loading={isConfirming}
+                      disabled={selectedCandidateFollowed}
                     >
-                      添加到我的关注
+                      {selectedCandidateFollowed ? '已关注' : '添加到我的关注'}
                     </Button>
                   </Group>
                 </>

@@ -72,7 +72,7 @@ const RunnerSearchModal = ({
   const resolveRunner = async () => {
     const normalizedBib = bibNumber.trim();
     if (!normalizedBib) {
-      setResolveError('请输入号码布');
+      setResolveError('请输入号码布或姓名');
       return;
     }
 
@@ -90,7 +90,7 @@ const RunnerSearchModal = ({
         { skipAuth: true },
       ) as ResolveResponse;
       if (!response.candidates?.length) {
-        setResolveError('未找到该号码布的选手');
+        setResolveError('未找到该选手');
         return;
       }
       setCandidates(response.candidates);
@@ -150,8 +150,8 @@ const RunnerSearchModal = ({
       <Stack gap="md">
         <Stack gap="sm">
           <TextInput
-            label="号码布"
-            placeholder="请输入号码布（必填）"
+            label="号码布或姓名"
+            placeholder="输入号码布，或至少 2 个字符的姓名"
             value={bibNumber}
             onChange={(event) => setBibNumber(event.currentTarget.value)}
             onKeyDown={(event) => {
@@ -177,7 +177,7 @@ const RunnerSearchModal = ({
             loading={isResolving}
             fullWidth
           >
-            查询号码布
+            查询选手
           </Button>
         </Stack>
 
@@ -187,7 +187,7 @@ const RunnerSearchModal = ({
             {candidates.length > 1 && !selectedCandidate && (
               <>
                 <Text size="sm" c="dimmed">
-                  该号码布匹配多个公开组别，请选择一个：
+                  找到多位选手，请选择一个：
                 </Text>
                 {candidates.map((candidate) => (
                   <Button
