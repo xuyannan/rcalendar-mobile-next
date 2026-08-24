@@ -40,6 +40,8 @@ import type {
   SharedTrackingResponse,
 } from './types';
 import {
+  boardApiPath,
+  boardSharePath,
   formatEventDateTime,
   getGroupState,
   groupStateLabel,
@@ -101,9 +103,11 @@ const SharedTrackingBoard = ({
   }, []);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ['sharedTrackingBoard', shareToken, isAuthenticated],
+    queryKey: ['sharedTrackingBoard', eventId, shareToken, isAuthenticated],
     queryFn: async () => request.get(
-      `/api/v2/tracking-boards/${shareToken}/`,
+      eventId
+        ? boardApiPath(eventId, shareToken || '')
+        : `/api/v2/tracking-boards/${shareToken}/`,
       { ...(isAuthenticated ? {} : { skipAuth: true }) },
     ) as Promise<SharedTrackingResponse>,
     enabled: Boolean(shareToken),
@@ -119,9 +123,7 @@ const SharedTrackingBoard = ({
   useEffect(() => {
     if (isLegacyRoute && data?.board.eventId && data.board.shareToken) {
       navigate(
-        `/events/${data.board.eventId}/tracking?board=${
-          encodeURIComponent(data.board.shareToken)
-        }`,
+        boardSharePath(data.board),
         { replace: true },
       );
     }
@@ -167,7 +169,9 @@ const SharedTrackingBoard = ({
     try {
       if (isAuthenticated && shareToken) {
         const response = await request.post(
-          `/api/v2/tracking-boards/${shareToken}/copy/`,
+          eventId
+            ? boardApiPath(eventId, shareToken, '/copy/')
+            : `/api/v2/tracking-boards/${shareToken}/copy/`,
           {},
         ) as { created: number };
         notifications.show({
@@ -218,14 +222,16 @@ const SharedTrackingBoard = ({
       return;
     }
     await request.post(
-      `/api/v2/tracking-boards/${shareToken}/runners/`,
+      eventId
+        ? boardApiPath(eventId, shareToken, '/runners/')
+        : `/api/v2/tracking-boards/${shareToken}/runners/`,
       {
         resolutionToken: candidate.resolutionToken,
         nickname,
       },
     );
     await queryClient.invalidateQueries({
-      queryKey: ['sharedTrackingBoard', shareToken],
+      queryKey: ['sharedTrackingBoard', eventId, shareToken],
     });
     notifications.show({
       message: '已添加到共享列表',
@@ -240,7 +246,9 @@ const SharedTrackingBoard = ({
     setRemovingRunnerId(runnerId);
     try {
       await request.delete(
-        `/api/v2/tracking-boards/${shareToken}/runners/${runnerId}/`,
+        eventId
+          ? boardApiPath(eventId, shareToken, `/runners/${runnerId}/`)
+          : `/api/v2/tracking-boards/${shareToken}/runners/${runnerId}/`,
       );
       await queryClient.invalidateQueries({
         queryKey: ['sharedTrackingBoard', shareToken],
@@ -266,7 +274,9 @@ const SharedTrackingBoard = ({
     setIsClosing(true);
     try {
       await request.patch(
-        `/api/v2/tracking-boards/${shareToken}/`,
+        eventId
+          ? boardApiPath(eventId, shareToken)
+          : `/api/v2/tracking-boards/${shareToken}/`,
         { isActive: false },
       );
       notifications.show({

@@ -132,6 +132,8 @@ export interface TrackingBoardSummary {
   eventId: number;
   eventName: string;
   shareToken: string;
+  slug?: string | null;
+  shareKey?: string;
   addPolicy: TrackingBoardAddPolicy;
   isActive: boolean;
   isDeleted?: boolean;

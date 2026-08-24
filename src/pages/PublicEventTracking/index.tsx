@@ -64,6 +64,9 @@ import type {
   TrackingBoardSummary,
 } from './types';
 import {
+  boardApiPath,
+  boardShareKey,
+  boardSharePath,
   buildFollowedRunnerIndex,
   formatEventDateTime,
   getGroupState,
@@ -135,6 +138,8 @@ const PersonalTrackingPage = () => {
   const [shareAddPolicy, setShareAddPolicy] =
     useState<TrackingBoardAddPolicy>('owner_only');
   const [shareToken, setShareToken] = useState('');
+  const [shareSlug, setShareSlug] = useState('');
+  const [editingBoardSlug, setEditingBoardSlug] = useState('');
   const [shareLink, setShareLink] = useState('');
   const [isCreatingShare, setIsCreatingShare] = useState(false);
   const [editingBoard, setEditingBoard] =
@@ -296,9 +301,7 @@ const PersonalTrackingPage = () => {
   );
 
   const buildShareLink = (board: TrackingBoardSummary) =>
-    `${window.location.origin}/events/${board.eventId}/tracking?board=${
-      encodeURIComponent(board.shareToken)
-    }`;
+    `${window.location.origin}${boardSharePath(board)}`;
 
   const openAddModal = () => {
     setBibNumber('');
@@ -455,6 +458,7 @@ const PersonalTrackingPage = () => {
     }
     setShareLink('');
     setShareToken('');
+    setShareSlug('');
     setShareName('');
     setShareCreateMode('empty');
     setSelectedShareRunnerIds([]);
@@ -485,9 +489,10 @@ const PersonalTrackingPage = () => {
           name: shareName.trim() || undefined,
           runnerIds,
           addPolicy: shareAddPolicy,
+          slug: shareSlug.trim() || undefined,
         },
       ) as TrackingBoardSummary;
-      setShareToken(board.shareToken);
+      setShareToken(boardShareKey(board));
       setShareLink(buildShareLink(board));
       await refetchBoards();
       notifications.show({
@@ -541,16 +546,13 @@ const PersonalTrackingPage = () => {
     if (!board.isActive) {
       return;
     }
-    navigate(
-      `/events/${board.eventId}/tracking?board=${
-        encodeURIComponent(board.shareToken)
-      }`,
-    );
+    navigate(boardSharePath(board));
   };
 
   const startEditingBoard = (board: TrackingBoardSummary) => {
     setEditingBoard(board);
     setEditingBoardName(board.name);
+    setEditingBoardSlug(board.slug || '');
   };
 
   const saveBoardName = async () => {
@@ -560,8 +562,11 @@ const PersonalTrackingPage = () => {
     setIsSavingBoard(true);
     try {
       await request.patch(
-        `/api/v2/tracking-boards/${editingBoard.shareToken}/`,
-        { name: editingBoardName.trim() },
+        boardApiPath(editingBoard.eventId, boardShareKey(editingBoard)),
+        {
+          name: editingBoardName.trim(),
+          slug: editingBoardSlug.trim(),
+        },
       );
       await refetchBoards();
       setEditingBoard(null);
@@ -586,7 +591,7 @@ const PersonalTrackingPage = () => {
     setIsDeletingBoard(true);
     try {
       await request.delete(
-        `/api/v2/tracking-boards/${deletingBoard.shareToken}/`,
+        boardApiPath(deletingBoard.eventId, boardShareKey(deletingBoard)),
       );
       await refetchBoards();
       setDeletingBoard(null);
@@ -1108,6 +1113,18 @@ const PersonalTrackingPage = () => {
                   )}
                 </Stack>
               )}
+              <TextInput
+                label="自定义短链（可选）"
+                placeholder="例如 acg"
+                description={
+                  eventId
+                    ? `生成后为 /events/${eventId}/tracking?board=acg`
+                    : '生成后可通过短链打开共享列表'
+                }
+                value={shareSlug}
+                onChange={(event) => setShareSlug(event.currentTarget.value)}
+                maxLength={32}
+              />
               <Select
                 label="成员权限"
                 data={[
@@ -1192,6 +1209,13 @@ const PersonalTrackingPage = () => {
             onChange={(event) => setEditingBoardName(event.currentTarget.value)}
             maxLength={128}
             required
+          />
+          <TextInput
+            label="自定义短链（可选）"
+            placeholder="例如 acg"
+            value={editingBoardSlug}
+            onChange={(event) => setEditingBoardSlug(event.currentTarget.value)}
+            maxLength={32}
           />
           <Group justify="flex-end">
             <Button

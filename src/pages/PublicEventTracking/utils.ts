@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import type {
   LocalTrackingEntry,
   PublicTrackingGroup,
+  TrackingBoardSummary,
   TrackingCheckpoint,
 } from './types';
 
@@ -219,6 +220,23 @@ export const formatDateTime = (
     return dayjs(value).format('MM-DD HH:mm');
   }
 };
+
+export const boardShareKey = (board: {
+  slug?: string | null;
+  shareKey?: string;
+  shareToken: string;
+}) => board.slug || board.shareKey || board.shareToken;
+
+export const boardSharePath = (board: TrackingBoardSummary) =>
+  `/events/${board.eventId}/tracking?board=${encodeURIComponent(
+    boardShareKey(board),
+  )}`;
+
+export const boardApiPath = (
+  eventId: string | number,
+  key: string,
+  suffix = '',
+) => `/api/v2/events/${eventId}/tracking-boards/${encodeURIComponent(key)}${suffix || '/'}`;
 
 export const formatEventDateTime = (
   value?: string | null,
