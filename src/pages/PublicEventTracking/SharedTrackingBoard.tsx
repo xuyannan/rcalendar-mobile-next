@@ -185,8 +185,8 @@ const SharedTrackingBoard = ({
         return;
       }
 
-      const eventId = String(data.board.eventId);
-      const currentEntries = readLocalTracking(eventId);
+      const localEventId = String(data.board.eventId);
+      const currentEntries = readLocalTracking(localEventId);
       const boardRunners = data.groups.flatMap((group) => group.runners);
       const nextEntries = boardRunners.reduce<LocalTrackingEntry[]>(
         (entries, runner) => upsertLocalTracking(entries, {
@@ -197,7 +197,7 @@ const SharedTrackingBoard = ({
         }),
         currentEntries,
       );
-      writeLocalTracking(eventId, nextEntries);
+      writeLocalTracking(localEventId, nextEntries);
       notifications.show({
         message: `已添加 ${boardRunners.length} 位选手到本浏览器的关注列表`,
         color: 'green',
