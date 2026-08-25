@@ -374,8 +374,7 @@ const SharedTrackingBoard = ({
                 )} · 共 {data.board.runnerCount} 位选手
               </Text>
               <Alert color="indigo" title="当前正在查看共享列表">
-                这是一个共享视图。复制到我的关注后，选手才会保存到你的个人列表；
-                共享列表的添加和删除不会修改你的个人关注。
+                这是一个共享列表。您也可以创建自己的关注列表，也可以新建共享列表。
               </Alert>
               {!isAuthenticated && (
                 <Alert
