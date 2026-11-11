@@ -8,7 +8,6 @@ import {
   Loader,
   Modal,
   Paper,
-  SimpleGrid,
   Stack,
   Text,
   Title,
@@ -31,9 +30,11 @@ import {
 } from 'react-router-dom';
 import request from '../../utils/request';
 import { STORAGE_USER_TOKEN } from '../../constants';
-import RunnerCard from './components/RunnerCard';
 import RunnerSearchModal from './components/RunnerSearchModal';
 import TrackingBrandHeader from './components/TrackingBrandHeader';
+import TrackingGroups from './components/TrackingGroups';
+import TrackingViewModeToggle from './components/TrackingViewControls';
+import useTrackingViewMode from './components/useTrackingViewMode';
 import type {
   LocalTrackingEntry,
   ResolutionCandidate,
@@ -43,8 +44,6 @@ import {
   boardApiPath,
   boardSharePath,
   formatEventDateTime,
-  getGroupState,
-  groupStateLabel,
   readLocalTracking,
   sortTrackingGroups,
   upsertLocalTracking,
@@ -96,6 +95,7 @@ const SharedTrackingBoard = ({
     useState<'account' | 'browser'>('browser');
   const [isClosing, setIsClosing] = useState(false);
   const [removingRunnerId, setRemovingRunnerId] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useTrackingViewMode();
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
@@ -251,7 +251,7 @@ const SharedTrackingBoard = ({
           : `/api/v2/tracking-boards/${shareToken}/runners/${runnerId}/`,
       );
       await queryClient.invalidateQueries({
-        queryKey: ['sharedTrackingBoard', shareToken],
+        queryKey: ['sharedTrackingBoard', eventId, shareToken],
       });
       notifications.show({
         message: '已从共享列表移除',
@@ -335,7 +335,7 @@ const SharedTrackingBoard = ({
         <Stack gap="md">
           <Paper withBorder p="lg" radius="lg">
             <Stack gap="sm">
-              <Group justify="space-between" align="flex-start">
+              <Group justify="space-between" align="flex-start" wrap="wrap">
                 <Box>
                   <Text size="sm" c="dimmed">共享赛事追踪</Text>
                   <Title order={2}>{data.board.name}</Title>
@@ -343,18 +343,21 @@ const SharedTrackingBoard = ({
                     {data.board.eventName}
                   </Text>
                 </Box>
-                <Button
-                  variant="subtle"
-                  size="compact-sm"
-                  leftSection={<IconRefresh size={16} />}
-                  onClick={() => {
-                    setNow(Date.now());
-                    void refetch();
-                  }}
-                  loading={isFetching}
-                >
-                  刷新
-                </Button>
+                <Group gap="xs">
+                  <TrackingViewModeToggle value={viewMode} onChange={setViewMode} />
+                  <Button
+                    variant="subtle"
+                    size="compact-sm"
+                    leftSection={<IconRefresh size={16} />}
+                    onClick={() => {
+                      setNow(Date.now());
+                      void refetch();
+                    }}
+                    loading={isFetching}
+                  >
+                    刷新
+                  </Button>
+                </Group>
               </Group>
               <Button
                 variant="subtle"
@@ -431,52 +434,18 @@ const SharedTrackingBoard = ({
             </Stack>
           </Paper>
 
-          {sortedGroups.map((group) => {
-            const state = getGroupState(group, now);
-            return (
-              <Stack key={group.id} gap="xs">
-                <Group justify="space-between">
-                  <Box>
-                    <Title order={4}>{group.name}</Title>
-                    <Text size="xs" c="dimmed">
-                      {group.startAt
-                        ? formatEventDateTime(
-                          group.startAt,
-                          data.event.timezone,
-                          group.startAtBeijing,
-                        )
-                        : '时间待定'}
-                      {group.distance
-                        ? ` · ${group.distance}${group.distanceUnit || 'km'}`
-                        : ''}
-                    </Text>
-                  </Box>
-                  <Text size="sm" c="dimmed">
-                    {groupStateLabel[state]}
-                  </Text>
-                </Group>
-                {group.runners.length > 0 ? (
-                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-                    {group.runners.map((runner) => (
-                      <RunnerCard
-                        key={runner.id}
-                        runner={runner}
-                        groupName={group.name}
-                        eventTimezone={data.event.timezone}
-                        canRemove={data.board.isOwner}
-                        isRemoving={removingRunnerId === runner.id}
-                        onRemove={() => void removeRunnerFromBoard(runner.id)}
-                      />
-                    ))}
-                  </SimpleGrid>
-                ) : (
-                  <Paper withBorder p="md" radius="md">
-                    <Text size="sm" c="dimmed">暂无共享选手</Text>
-                  </Paper>
-                )}
-              </Stack>
-            );
-          })}
+          <TrackingGroups
+            key={`event-${data.board.eventId}-${shareToken || 'shared'}`}
+            groups={sortedGroups}
+            now={now}
+            eventTimezone={data.event.timezone}
+            viewMode={viewMode}
+            storageKey={`event-${data.board.eventId}-${shareToken || 'shared'}`}
+            canRemove={data.board.isOwner}
+            removingRunnerId={removingRunnerId}
+            emptyMessage="暂无共享选手"
+            onRemove={(runnerId) => void removeRunnerFromBoard(runnerId)}
+          />
         </Stack>
       </Container>
 

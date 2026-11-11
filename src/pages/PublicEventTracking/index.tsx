@@ -15,7 +15,6 @@ import {
   Paper,
   Radio,
   Select,
-  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -48,13 +47,15 @@ import {
 } from 'react-router-dom';
 import request from '../../utils/request';
 import { STORAGE_USER_TOKEN } from '../../constants';
-import RunnerCard, { RunnerProfileMeta } from './components/RunnerCard';
+import { RunnerProfileMeta } from './components/RunnerCard';
 import SharedTrackingBoard from './SharedTrackingBoard';
 import TrackingBrandHeader from './components/TrackingBrandHeader';
+import TrackingGroups from './components/TrackingGroups';
+import TrackingViewModeToggle from './components/TrackingViewControls';
+import useTrackingViewMode from './components/useTrackingViewMode';
 import type {
   ConfirmResponse,
   LocalTrackingEntry,
-  PublicTrackingGroup,
   PublicTrackingResponse,
   ResolutionCandidate,
   ResolveResponse,
@@ -68,9 +69,6 @@ import {
   boardShareKey,
   boardSharePath,
   buildFollowedRunnerIndex,
-  formatEventDateTime,
-  getGroupState,
-  groupStateLabel,
   isAlreadyFollowed,
   readLocalTracking,
   sortTrackingGroups,
@@ -149,6 +147,7 @@ const PersonalTrackingPage = () => {
   const [deletingBoard, setDeletingBoard] =
     useState<TrackingBoardSummary | null>(null);
   const [isDeletingBoard, setIsDeletingBoard] = useState(false);
+  const [viewMode, setViewMode] = useTrackingViewMode();
   const syncAttempted = useRef(false);
 
   useEffect(() => {
@@ -834,7 +833,7 @@ const PersonalTrackingPage = () => {
             </Card>
           )}
 
-          <Group justify="space-between" align="center">
+          <Group justify="space-between" align="center" wrap="wrap">
             <Group gap="xs">
               <Title order={3}>我的关注</Title>
               {hasTrackedRunners && (
@@ -847,72 +846,32 @@ const PersonalTrackingPage = () => {
                 </ActionIcon>
               )}
             </Group>
-            <Button
-              variant="subtle"
-              size="compact-sm"
-              leftSection={<IconRefresh size={16} />}
-              onClick={() => void refetch()}
-              loading={isFetching}
-            >
-              刷新
-            </Button>
+            <Group gap="xs">
+              <TrackingViewModeToggle value={viewMode} onChange={setViewMode} />
+              <Button
+                variant="subtle"
+                size="compact-sm"
+                leftSection={<IconRefresh size={16} />}
+                onClick={() => void refetch()}
+                loading={isFetching}
+              >
+                刷新
+              </Button>
+            </Group>
           </Group>
 
-          {sortedGroups.map((group: PublicTrackingGroup) => {
-            const state = getGroupState(group, now);
-            return (
-              <Stack key={group.id} gap="xs">
-                <Group justify="space-between">
-                  <Box>
-                    <Title order={4}>{group.name}</Title>
-                    <Text size="xs" c="dimmed">
-                      {formatEventDateTime(
-                        group.startAt,
-                        data.event.timezone,
-                        group.startAtBeijing,
-                      )}
-                      {group.distance
-                        ? ` · ${group.distance}${group.distanceUnit || 'km'}`
-                        : ''}
-                    </Text>
-                  </Box>
-                  <Badge
-                    color={
-                      state === 'ongoing'
-                        ? 'blue'
-                        : state === 'finished'
-                          ? 'gray'
-                          : 'orange'
-                    }
-                    variant="light"
-                  >
-                    {groupStateLabel[state]}
-                  </Badge>
-                </Group>
-                {group.runners.length > 0 ? (
-                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-                    {group.runners.map((runner) => (
-                      <RunnerCard
-                        key={runner.id}
-                        runner={runner}
-                        groupName={group.name}
-                        eventTimezone={data.event.timezone}
-                        canRemove
-                        isRemoving={removingRunnerId === runner.id}
-                        onRemove={() => void removeRunner(runner.id)}
-                      />
-                    ))}
-                  </SimpleGrid>
-                ) : (
-                  <Paper withBorder p="md" radius="md">
-                    <Text size="sm" c="dimmed">
-                      暂无关注选手，可通过上方号码布添加。
-                    </Text>
-                  </Paper>
-                )}
-              </Stack>
-            );
-          })}
+          <TrackingGroups
+            key={`event-${eventId || 'unknown'}-personal`}
+            groups={sortedGroups}
+            now={now}
+            eventTimezone={data.event.timezone}
+            viewMode={viewMode}
+            storageKey={`event-${eventId || 'unknown'}-personal`}
+            canRemove
+            removingRunnerId={removingRunnerId}
+            emptyMessage="暂无关注选手，可通过上方号码布添加。"
+            onRemove={(runnerId) => void removeRunner(runnerId)}
+          />
         </Stack>
       </Container>
 

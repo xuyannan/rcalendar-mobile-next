@@ -15,13 +15,13 @@ import type {
   OfficialRunnerProfile,
   PublicTrackingRunner,
   TrackingCheckpoint,
-  TrackingStatus,
 } from '../types';
 import {
   formatCheckpointTime,
   formatCumulativeTime,
   formatEventDateTime,
 } from '../utils';
+import { formatSegmentStats, STATUS_MAP } from './trackingDisplay';
 
 interface RunnerCardProps {
   runner: PublicTrackingRunner;
@@ -31,14 +31,6 @@ interface RunnerCardProps {
   isRemoving?: boolean;
   onRemove: (runnerId: number) => void;
 }
-
-const STATUS_MAP: Record<TrackingStatus, { label: string; color: string }> = {
-  not_started: { label: '未开始', color: 'gray' },
-  racing: { label: '比赛中', color: 'blue' },
-  finished: { label: '已完赛', color: 'green' },
-  dns: { label: 'DNS', color: 'orange' },
-  dnf: { label: 'DNF', color: 'red' },
-};
 
 export const RunnerProfileMeta = ({
   profile,
@@ -104,25 +96,6 @@ const CheckpointSummary = ({
     )}
   </Box>
 );
-
-const formatNumber = (value: number) => (
-  Number.isInteger(value)
-    ? String(value)
-    : value.toFixed(2).replace(/\.?0+$/, '')
-);
-
-const formatSegmentStats = (checkpoint: TrackingCheckpoint) => {
-  const stats = [];
-  if (checkpoint.segmentDistance !== null
-    && checkpoint.segmentDistance !== undefined) {
-    stats.push(`${formatNumber(checkpoint.segmentDistance)} km`);
-  }
-  if (checkpoint.segmentElevationGain !== null
-    && checkpoint.segmentElevationGain !== undefined) {
-    stats.push(`爬升 ${formatNumber(checkpoint.segmentElevationGain)} m`);
-  }
-  return stats.join(' · ');
-};
 
 const RunnerCard: React.FC<RunnerCardProps> = ({
   runner,
