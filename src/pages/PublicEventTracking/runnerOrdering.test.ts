@@ -45,9 +45,9 @@ describe('runner progress', () => {
       runner(2, { currentCheckpoint: checkpoint(4, { time: '23:30:00' }) })];
     expect(sortTrackingRunners(group(1, { runners, startAt: '2026-11-13T22:00:00Z' })).map((r) => r.id)).toEqual([2, 1]);
   });
-  it('uses cumulative durations to disambiguate multi-day time-only reports', () => {
-    expect(ids([runner(1, { currentCheckpoint: checkpoint(4, { time: '01:00:00', cumulativeTime: '25:00:00' }) }),
-      runner(2, { currentCheckpoint: checkpoint(4, { time: '23:00:00', cumulativeTime: '23:00:00' }) })])).toEqual([2, 1]);
+  it('orders same-point arrivals by actual time, not cumulativeTime segment duration', () => {
+    expect(ids([runner(1, { currentCheckpoint: checkpoint(4, { time: '12:08:15', cumulativeTime: '00:05:00' }) }),
+      runner(2, { currentCheckpoint: checkpoint(4, { time: '11:04:40', cumulativeTime: '01:30:00' }) })])).toEqual([2, 1]);
   });
   it('uses canonical checkpoint ordering even if reports carry stale sort orders', () => {
     expect(ids([runner(1, { currentCheckpoint: checkpoint(3, { time: '09:00:00', sortOrder: 100 }) }),
@@ -75,5 +75,57 @@ describe('group-local filtering', () => {
     const sorted = sortTrackingRunners(group(1, { runners: [runner(1, { name: 'Alice', currentCheckpoint: checkpoint(3, { time: '08:00:00' }) }), runner(2, { name: 'Alice Fast', currentCheckpoint: checkpoint(4, { time: '09:00:00' }) })] }));
     expect(filterTrackingRunners(sorted, 'alice').map((r) => r.id)).toEqual([2, 1]);
     expect(filterTrackingRunners(sorted, '').map((r) => r.id)).toEqual([2, 1]);
+  });
+});
+
+
+describe('CNH-60 millisecond reports', () => {
+  // The brief supplies order/names but not database/provider IDs. Stable fixture
+  // IDs preserve the API relationship between group, current point and history.
+  const checkpoints = Array.from({ length: 8 }, (_, order) => checkpoint(order, {
+    id: 1000 + order,
+    providerPointId: String(order),
+    name: ['起点', 'CP1', 'CP2', 'CP3', 'CP4 里辽', 'CP5 峰山村', 'CP6 屠岙蔡', '终点'][order],
+    pointType: order === 0 ? 'start' : order === 7 ? 'finish' : 'checkpoint',
+  }));
+  const trackedRunner = (bib: number, name: string, order: number, time: string, segmentTime: string) => {
+    const current = { ...checkpoints[order], time, cumulativeTime: segmentTime };
+    const history = checkpoints.map((point, index) => index === order ? current
+      : index < order ? { ...point, time: index === 0 ? '06:00:02.039' : `${String(6 + index).padStart(2, '0')}:00:00.123` }
+        : { ...point, prediction: '13:30:00.000', isPredicted: true });
+    return runner(bib, { name, bibNumber: String(bib), currentCheckpoint: current,
+      history, nextCheckpoint: history[order + 1] });
+  };
+  const cnhGroup = group(60, {
+    name: 'CNH-60',
+    startAt: '2026-11-13T06:00:00+08:00',
+    checkpoints,
+    runners: [
+      trackedRunner(3130, '黄鹏程', 4, '11:04:40.312', '01:30:00'),
+      trackedRunner(3162, '徐恺', 5, '11:34:07.055', '00:30:00'),
+      trackedRunner(3599, '冯旭生', 4, '12:08:15.039', '00:05:00'),
+      trackedRunner(3776, '裴树龙', 6, '12:17:38.149', '01:05:40'),
+    ],
+  });
+
+  it('reproduces the four reported runners and sorts CP6, CP5, then CP4 arrival times', () => {
+    expect(sortTrackingRunners(cnhGroup, 'Asia/Shanghai').map((r) => r.bibNumber))
+      .toEqual(['3776', '3162', '3130', '3599']);
+  });
+  it('retains progress from millisecond history without a current point', () => {
+    expect(sortTrackingRunners({ ...cnhGroup, runners: cnhGroup.runners.map((r) => ({ ...r, currentCheckpoint: null })) }, 'Asia/Shanghai').map((r) => r.bibNumber))
+      .toEqual(['3776', '3162', '3130', '3599']);
+  });
+  it('uses milliseconds to break same-second ties, regardless of ID and segment duration', () => {
+    expect(sortTrackingRunners({ ...cnhGroup, runners: [
+      trackedRunner(3130, 'Later', 4, '11:04:40.312', '00:01:00'),
+      trackedRunner(3599, 'Earlier', 4, '11:04:40.039', '01:30:00'),
+    ] }, 'Asia/Shanghai').map((r) => r.id)).toEqual([3599, 3130]);
+  });
+  it('compares millisecond clock and dated arrivals on the same timeline', () => {
+    expect(sortTrackingRunners({ ...cnhGroup, runners: [
+      trackedRunner(3130, 'Clock', 4, '11:04:40.312', '00:01:00'),
+      trackedRunner(3599, 'Dated', 4, '2026-11-13T11:04:40.039+08:00', '01:30:00'),
+    ] }, 'Asia/Shanghai').map((r) => r.id)).toEqual([3599, 3130]);
   });
 });

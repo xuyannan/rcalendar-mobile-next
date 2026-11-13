@@ -12,13 +12,6 @@ const isFinish = (point: TrackingCheckpoint) => (
   || /^(finish|终点)$/i.test(point.name.trim())
 );
 
-const duration = (value?: string | null) => {
-  const match = value?.match(/^(\d+):(\d{2}):(\d{2})$/);
-  return match && +match[2] < 60 && +match[3] < 60
-    ? (+match[1] * 3600 + +match[2] * 60 + +match[3]) * 1000
-    : null;
-};
-
 export const sortTrackingRunners = (group: PublicTrackingGroup, eventTimezone = 'UTC') => {
   const start = groupTimestamp(group, 'startAt', eventTimezone);
   const reports = (runner: PublicTrackingRunner) => [
@@ -42,12 +35,9 @@ export const sortTrackingRunners = (group: PublicTrackingGroup, eventTimezone = 
       const order = Number.isFinite(canonical?.sortOrder) ? canonical.sortOrder
         : Number.isFinite(point.sortOrder) ? point.sortOrder : canonicalIndex;
       const clock = clockSeconds(point.time);
-      const elapsed = duration(point.cumulativeTime);
+      // cumulativeTime can be a segment duration, not elapsed time from the start.
       const arrival = parseTrackingDate(point.time, eventTimezone)
-        ?? (clock !== null
-          ? start !== null && elapsed !== null ? start + elapsed
-            : clockTimestamp(clock, anchor, eventTimezone)
-          : null);
+        ?? (clock !== null ? clockTimestamp(clock, anchor, eventTimezone) : null);
       if (arrival === null) return [];
       return [{ order, arrival, finish: isFinish(canonical || point) || isFinish(point) }];
     }).sort((a, b) => Number(b.finish) - Number(a.finish)
