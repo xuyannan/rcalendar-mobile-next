@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { groupTimestamp } from './trackingTime';
 import type {
   LocalTrackingEntry,
   PublicTrackingGroup,
@@ -107,20 +108,13 @@ export const isAlreadyFollowed = (
   );
 };
 
-const timestamp = (value?: string | null) => {
-  if (!value) {
-    return null;
-  }
-  const parsed = dayjs(value);
-  return parsed.isValid() ? parsed.valueOf() : null;
-};
-
 export const getGroupState = (
   group: PublicTrackingGroup,
   now = Date.now(),
+  eventTimezone = 'UTC',
 ): GroupState => {
-  const start = timestamp(group.startAt);
-  const close = timestamp(group.closeAt);
+  const start = groupTimestamp(group, 'startAt', eventTimezone);
+  const close = groupTimestamp(group, 'closeAt', eventTimezone);
 
   if (start !== null && start > now) {
     return 'upcoming';
@@ -144,9 +138,10 @@ const GROUP_STATE_ORDER: Record<GroupState, number> = {
 export const sortTrackingGroups = (
   groups: PublicTrackingGroup[],
   now = Date.now(),
+  eventTimezone = 'UTC',
 ) => [...groups].sort((left, right) => {
-  const leftState = getGroupState(left, now);
-  const rightState = getGroupState(right, now);
+  const leftState = getGroupState(left, now, eventTimezone);
+  const rightState = getGroupState(right, now, eventTimezone);
   const stateDifference = (
     GROUP_STATE_ORDER[leftState] - GROUP_STATE_ORDER[rightState]
   );
@@ -154,8 +149,8 @@ export const sortTrackingGroups = (
     return stateDifference;
   }
 
-  const leftStart = timestamp(left.startAt) ?? Number.MAX_SAFE_INTEGER;
-  const rightStart = timestamp(right.startAt) ?? Number.MAX_SAFE_INTEGER;
+  const leftStart = groupTimestamp(left, 'startAt', eventTimezone) ?? Number.MAX_SAFE_INTEGER;
+  const rightStart = groupTimestamp(right, 'startAt', eventTimezone) ?? Number.MAX_SAFE_INTEGER;
   return leftStart - rightStart || left.id - right.id;
 });
 

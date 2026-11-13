@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Box,
   Badge,
   Group,
@@ -6,17 +7,19 @@ import {
   SimpleGrid,
   Stack,
   Text,
+  TextInput,
   Title,
   UnstyledButton,
 } from '@mantine/core';
-import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { IconChevronDown, IconChevronRight, IconSearch, IconX } from '@tabler/icons-react';
+import { useEffect, useMemo, useState } from 'react';
 import type { PublicTrackingGroup } from '../types';
 import {
   formatEventDateTime,
   getGroupState,
   groupStateLabel,
 } from '../utils';
+import { filterTrackingRunners, sortTrackingRunners } from '../runnerOrdering';
 import RunnerCard from './RunnerCard';
 import RunnerList from './RunnerListRow';
 import type { TrackingViewMode } from './TrackingViewControls';
@@ -69,6 +72,12 @@ const TrackingGroups = ({
     () => readCollapsedState(storageKey),
   );
 
+  const [queries, setQueries] = useState<Record<string, string>>({});
+  const sortedGroups = useMemo(() => groups.map((group) => ({
+    ...group,
+    runners: sortTrackingRunners(group, eventTimezone),
+  })), [groups, eventTimezone]);
+
   useEffect(() => {
     try {
       localStorage.setItem(
@@ -82,69 +91,97 @@ const TrackingGroups = ({
 
   return (
     <Stack gap="xs">
-      {groups.map((group) => {
-        const state = getGroupState(group, now);
+      {sortedGroups.map((group) => {
+        const state = getGroupState(group, now, eventTimezone);
         const groupKey = String(group.id);
         const expanded = expandedByGroup[groupKey] ?? group.runners.length > 0;
+        const query = queries[groupKey] || '';
+        const visibleRunners = filterTrackingRunners(group.runners, query);
         return (
-          <Stack key={group.id} gap="xs">
-            <UnstyledButton
-              onClick={() => setExpandedByGroup((current) => ({
-                ...current,
-                [groupKey]: !expanded,
-              }))}
-              aria-expanded={expanded}
-              aria-controls={`tracking-group-${group.id}`}
-              style={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
-                borderRadius: 'var(--mantine-radius-md)',
-              }}
-            >
-              <Group justify="space-between" align="center" wrap="nowrap" px="xs" py={4}>
-                <Group gap="xs" align="flex-start" wrap="nowrap" style={{ minWidth: 0 }}>
-                  {expanded
-                    ? <IconChevronDown size={18} aria-hidden />
-                    : <IconChevronRight size={18} aria-hidden />}
-                  <Box style={{ minWidth: 0 }}>
-                    <Group gap="xs" wrap="wrap">
-                      <Title order={4}>{group.name}</Title>
-                      <Text size="sm" c="dimmed">{group.runners.length} 位选手</Text>
-                    </Group>
-                    <Text size="xs" c="dimmed">
-                      {formatEventDateTime(
-                        group.startAt,
-                        eventTimezone,
-                        group.startAtBeijing,
-                      )}
-                      {group.distance
-                        ? ` · ${group.distance}${group.distanceUnit || 'km'}`
-                        : ''}
-                    </Text>
-                  </Box>
+          <Stack key={group.id} gap="xs" component="section" aria-label={group.name}>
+            <Group gap="xs" align="center" wrap="wrap">
+              <UnstyledButton
+                onClick={() => setExpandedByGroup((current) => ({
+                  ...current,
+                  [groupKey]: !expanded,
+                }))}
+                aria-expanded={expanded}
+                aria-controls={`tracking-group-${group.id}`}
+                style={{
+                  display: 'block',
+                  flex: '1 1 200px',
+                  minWidth: 0,
+                  textAlign: 'left',
+                  borderRadius: 'var(--mantine-radius-md)',
+                }}
+              >
+                <Group justify="space-between" align="center" wrap="nowrap" px="xs" py={4}>
+                  <Group gap="xs" align="flex-start" wrap="nowrap" style={{ minWidth: 0 }}>
+                    {expanded
+                      ? <IconChevronDown size={18} aria-hidden />
+                      : <IconChevronRight size={18} aria-hidden />}
+                    <Box style={{ minWidth: 0 }}>
+                      <Group gap="xs" wrap="wrap">
+                        <Title order={4}>{group.name}</Title>
+                        <Text size="sm" c="dimmed">{group.runners.length} 位选手</Text>
+                      </Group>
+                      <Text size="xs" c="dimmed">
+                        {formatEventDateTime(
+                          group.startAt,
+                          eventTimezone,
+                          group.startAtBeijing,
+                        )}
+                        {group.distance
+                          ? ` · ${group.distance}${group.distanceUnit || 'km'}`
+                          : ''}
+                      </Text>
+                    </Box>
+                  </Group>
+                  <Badge
+                    color={
+                      state === 'ongoing'
+                        ? 'blue'
+                        : state === 'finished'
+                          ? 'gray'
+                          : 'orange'
+                    }
+                    variant="light"
+                    style={{ flexShrink: 0 }}
+                  >
+                    {groupStateLabel[state]}
+                  </Badge>
                 </Group>
-                <Badge
-                  color={
-                    state === 'ongoing'
-                      ? 'blue'
-                      : state === 'finished'
-                        ? 'gray'
-                        : 'orange'
-                  }
-                  variant="light"
-                  style={{ flexShrink: 0 }}
-                >
-                  {groupStateLabel[state]}
-                </Badge>
-              </Group>
-            </UnstyledButton>
+              </UnstyledButton>
+              <TextInput
+                size="xs"
+                w={155}
+                maw="100%"
+                aria-label={`筛选${group.name}选手`}
+                placeholder="姓名 / 昵称 / 号码"
+                leftSection={<IconSearch size={14} />}
+                value={query}
+                onChange={(event) => {
+                  const value = event.currentTarget.value;
+                  setQueries((current) => ({ ...current, [groupKey]: value }));
+                }}
+                rightSection={query ? (
+                  <ActionIcon
+                    size="xs"
+                    variant="subtle"
+                    aria-label={`清空${group.name}筛选`}
+                    onClick={() => setQueries((current) => ({ ...current, [groupKey]: '' }))}
+                  >
+                    <IconX size={12} />
+                  </ActionIcon>
+                ) : undefined}
+              />
+            </Group>
             {expanded && (
               <Box id={`tracking-group-${group.id}`}>
-                {group.runners.length > 0 ? (
+                {visibleRunners.length > 0 ? (
                   viewMode === 'cards' ? (
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-                      {group.runners.map((runner) => (
+                      {visibleRunners.map((runner) => (
                         <RunnerCard
                           key={runner.id}
                           runner={runner}
@@ -158,7 +195,7 @@ const TrackingGroups = ({
                     </SimpleGrid>
                   ) : (
                     <RunnerList
-                      runners={group.runners}
+                      runners={visibleRunners}
                       canRemove={canRemove}
                       removingRunnerId={removingRunnerId}
                       onRemove={onRemove}
@@ -166,7 +203,9 @@ const TrackingGroups = ({
                   )
                 ) : (
                   <Paper withBorder p="md" radius="md">
-                    <Text size="sm" c="dimmed">{emptyMessage}</Text>
+                    <Text size="sm" c="dimmed" role="status">
+                      {group.runners.length > 0 ? '未找到匹配选手' : emptyMessage}
+                    </Text>
                   </Paper>
                 )}
               </Box>

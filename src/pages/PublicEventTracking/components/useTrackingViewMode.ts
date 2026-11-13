@@ -5,11 +5,11 @@ const VIEW_MODE_STORAGE_KEY = 'event-tracking-view-mode';
 
 const readViewMode = (): TrackingViewMode => {
   try {
-    return localStorage.getItem(VIEW_MODE_STORAGE_KEY) === 'list'
-      ? 'list'
-      : 'cards';
+    return localStorage.getItem(VIEW_MODE_STORAGE_KEY) === 'cards'
+      ? 'cards'
+      : 'list';
   } catch {
-    return 'cards';
+    return 'list';
   }
 };
 

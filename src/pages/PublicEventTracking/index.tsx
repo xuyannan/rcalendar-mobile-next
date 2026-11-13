@@ -267,8 +267,8 @@ const PersonalTrackingPage = () => {
   }, [data, isAuthenticated, localEntries]);
 
   const sortedGroups = useMemo(
-    () => sortTrackingGroups(displayGroups, now),
-    [displayGroups, now],
+    () => sortTrackingGroups(displayGroups, now, data?.event.timezone),
+    [displayGroups, now, data?.event.timezone],
   );
 
   const hasTrackedRunners = useMemo(

@@ -106,42 +106,42 @@ const RunnerListRow = ({
 
   return (
     <Accordion.Item value={String(runner.id)}>
-      <Accordion.Control
-        px="sm"
-        py="xs"
-        styles={{
-          control: { background: 'transparent' },
-          chevron: { marginLeft: 4 },
-        }}
-      >
-        <Box visibleFrom="sm">
-          <Box
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'minmax(190px, 1.2fr) minmax(145px, 1fr) minmax(145px, 1fr) auto',
-              gap: 16,
-              alignItems: 'center',
-            }}
-          >
-            <RunnerIdentity runner={runner} />
-            <CheckpointCell label="当前检查点" checkpoint={runner.currentCheckpoint} />
-            <CheckpointCell label="下一检查点" checkpoint={runner.nextCheckpoint} />
-            {removeAction}
-          </Box>
-        </Box>
-        <Box hiddenFrom="sm">
-          <Stack gap="xs" pr="xs">
-            <Group justify="space-between" align="flex-start" wrap="nowrap">
-              <RunnerIdentity runner={runner} compact />
-              {removeAction}
-            </Group>
-            <SimpleGrid cols={2} spacing="xs">
+      <Group gap={0} wrap="nowrap" align="flex-start">
+        <Accordion.Control
+          style={{ flex: 1, minWidth: 0 }}
+          px="sm"
+          py="xs"
+          styles={{
+            control: { background: 'transparent' },
+            chevron: { marginLeft: 4 },
+          }}
+        >
+          <Box visibleFrom="sm">
+            <Box
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr)',
+                gap: 16,
+                alignItems: 'center',
+              }}
+            >
+              <RunnerIdentity runner={runner} />
               <CheckpointCell label="当前检查点" checkpoint={runner.currentCheckpoint} />
               <CheckpointCell label="下一检查点" checkpoint={runner.nextCheckpoint} />
-            </SimpleGrid>
-          </Stack>
-        </Box>
-      </Accordion.Control>
+            </Box>
+          </Box>
+          <Box hiddenFrom="sm">
+            <Stack gap="xs" pr="xs">
+              <RunnerIdentity runner={runner} compact />
+              <SimpleGrid cols={2} spacing="xs">
+                <CheckpointCell label="当前检查点" checkpoint={runner.currentCheckpoint} />
+                <CheckpointCell label="下一检查点" checkpoint={runner.nextCheckpoint} />
+              </SimpleGrid>
+            </Stack>
+          </Box>
+        </Accordion.Control>
+        {canRemove && <Box pt="md" pr="xs">{removeAction}</Box>}
+      </Group>
       <Accordion.Panel px="sm" pb="sm">
         <Stack gap="xs">
           <Group gap="xs">

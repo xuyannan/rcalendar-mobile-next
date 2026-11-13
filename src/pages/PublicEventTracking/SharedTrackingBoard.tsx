@@ -140,8 +140,8 @@ const SharedTrackingBoard = ({
   }, [eventId, isDeletedError, navigate]);
 
   const sortedGroups = useMemo(
-    () => sortTrackingGroups(data?.groups || [], now),
-    [data?.groups, now],
+    () => sortTrackingGroups(data?.groups || [], now, data?.event.timezone),
+    [data?.groups, now, data?.event.timezone],
   );
 
   const groupOptions = useMemo(
